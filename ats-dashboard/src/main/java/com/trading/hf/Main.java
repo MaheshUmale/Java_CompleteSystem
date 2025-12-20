@@ -14,6 +14,7 @@ public class Main {
         String dataDirectory = "data";
 
         // --- Initialization ---
+        boolean dashboardEnabled = Boolean.parseBoolean(ConfigLoader.getProperty("dashboard.enabled", "true"));
         QuestDBWriter questDBWriter = questDbEnabled ? new QuestDBWriter() : null;
 
         VolumeBarGenerator volumeBarGenerator = new VolumeBarGenerator(volumeThreshold, bar -> {
@@ -27,6 +28,10 @@ public class Main {
                 volumeBarGenerator,
                 indexWeightCalculator
         );
+
+        if (dashboardEnabled) {
+            com.trading.hf.dashboard.DashboardBridge.start(volumeBarGenerator);
+        }
 
         if ("live".equalsIgnoreCase(runMode)) {
             // --- Live Mode ---
