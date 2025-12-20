@@ -34,6 +34,7 @@ public class MarketDataReplayer {
                         event.setLtp(rs.getDouble("ltp"));
                         event.setLtq(rs.getLong("ltq"));
                         event.setTs(rs.getTimestamp("ts").getTime());
+                        event.setTheta(-0.1);
                         // ... set other fields from the result set
                     } finally {
                         ringBuffer.publish(sequence);

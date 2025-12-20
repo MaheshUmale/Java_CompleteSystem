@@ -9,6 +9,8 @@ import com.upstox.feeder.MarketUpdateV3;
 import com.upstox.feeder.listener.OnMarketUpdateV3Listener;
 import com.upstox.feeder.listener.OnErrorListener;
 import com.upstox.feeder.constants.Mode;
+import com.upstox.feeder.MarketUpdateV3;
+import com.upstox.feeder.MarketUpdateV3.Feed;
 import java.util.Set;
 
 public class UpstoxMarketDataStreamer {
@@ -29,10 +31,12 @@ public class UpstoxMarketDataStreamer {
         marketDataStreamer.setOnMarketUpdateListener(new OnMarketUpdateV3Listener() {
             @Override
             public void onUpdate(MarketUpdateV3 marketUpdate) {
-                // if (strikeSubscriber != null && marketUpdate.getInstrumentToken().equals("NSE_INDEX|Nifty 50")) {
-                //     strikeSubscriber.onNiftySpotPrice(marketUpdate.getLtp());
-                // }
-                // publishMarketUpdate(marketUpdate);
+                marketUpdate.getFeeds().forEach((instrumentKey, feed) -> {
+                    if (strikeSubscriber != null && instrumentKey.equals("NSE_INDEX|Nifty 50")) {
+                        strikeSubscriber.onNiftySpotPrice(feed.getFullFeed().getMarketFF().getLtpc().getLtp());
+                    }
+                    publishMarketUpdate(instrumentKey, feed);
+                });
             }
         });
 
@@ -64,24 +68,30 @@ public class UpstoxMarketDataStreamer {
         marketDataStreamer.unsubscribe(instrumentKeys);
     }
 
-    private void publishMarketUpdate(MarketUpdateV3 marketUpdate) {
+    private void publishMarketUpdate(String instrumentKey, Feed feed) {
         long sequence = ringBuffer.next();
-        // try {
-        //     MarketEvent event = ringBuffer.get(sequence);
-        //     event.setSymbol(marketUpdate.getInstrumentToken());
-        //     event.setLtp(marketUpdate.getLtp());
-        //     event.setLtt(marketUpdate.getLtt());
-        //     event.setLtq(marketUpdate.getLtq());
-        //     event.setCp(marketUpdate.getClosePrice());
-        //     event.setTbq(marketUpdate.getTbv());
-        //     event.setTsq(marketUpdate.getTsv());
-        //     event.setVtt(marketUpdate.getVtt());
-        //     event.setOi(marketUpdate.getOi());
-        //     event.setIv(0); // IV not available in MarketUpdateV3
-        //     event.setAtp(marketUpdate.getAtp());
-        //     event.setTs(System.currentTimeMillis());
-        // } finally {
-        //     ringBuffer.publish(sequence);
-        // }
+        try {
+            MarketEvent event = ringBuffer.get(sequence);
+            var marketFF = feed.getFullFeed().getMarketFF();
+            var ltpc = marketFF.getLtpc();
+            var optionGreeks = feed.getFullFeed().getMarketFF().getOptionGreeks();
+
+
+            event.setSymbol(instrumentKey);
+            event.setLtp(ltpc.getLtp());
+            event.setLtt(ltpc.getLtt());
+            event.setLtq(ltpc.getLtq());
+            event.setCp(ltpc.getCp());
+            event.setTbq(marketFF.getMarketLevel().getBidAskQuote().get(0).getBidQ());
+            event.setTsq(marketFF.getMarketLevel().getBidAskQuote().get(0).getAskQ());
+            event.setVtt(marketFF.getVtt());
+            event.setOi(marketFF.getOi());
+            event.setIv(marketFF.getIv());
+            event.setAtp(marketFF.getAtp());
+            event.setTheta(optionGreeks.getTheta());
+            event.setTs(System.currentTimeMillis());
+        } finally {
+            ringBuffer.publish(sequence);
+        }
     }
 }

@@ -20,11 +20,15 @@ public class Main {
             System.out.println("New Volume Bar: " + bar.getSymbol() + " - " + bar.getClose());
         });
         IndexWeightCalculator indexWeightCalculator = new IndexWeightCalculator("IndexWeights.json");
+        PositionManager positionManager = new PositionManager();
+        UpstoxOrderManager orderManager = new UpstoxOrderManager(accessToken, positionManager);
+        ThetaExitGuard thetaExitGuard = new ThetaExitGuard(positionManager, orderManager);
 
         DisruptorManager disruptorManager = new DisruptorManager(
                 questDBWriter,
                 volumeBarGenerator,
-                indexWeightCalculator
+                indexWeightCalculator,
+                thetaExitGuard
         );
 
         UpstoxMarketDataStreamer marketDataStreamer = new UpstoxMarketDataStreamer(

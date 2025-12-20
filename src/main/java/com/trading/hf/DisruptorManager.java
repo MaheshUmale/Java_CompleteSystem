@@ -13,7 +13,7 @@ public class DisruptorManager {
     private final RingBuffer<MarketEvent> ringBuffer;
 
     @SuppressWarnings("unchecked")
-    public DisruptorManager(QuestDBWriter questDBWriter, VolumeBarGenerator volumeBarGenerator, IndexWeightCalculator indexWeightCalculator) {
+    public DisruptorManager(QuestDBWriter questDBWriter, VolumeBarGenerator volumeBarGenerator, IndexWeightCalculator indexWeightCalculator, ThetaExitGuard thetaExitGuard) {
         ThreadFactory threadFactory = Thread.ofVirtual().factory();
         disruptor = new Disruptor<>(
                 MarketEvent.EVENT_FACTORY,
@@ -23,7 +23,7 @@ public class DisruptorManager {
                 new YieldingWaitStrategy()
         );
 
-        disruptor.handleEventsWith(questDBWriter, volumeBarGenerator, indexWeightCalculator);
+        disruptor.handleEventsWith(questDBWriter, volumeBarGenerator, indexWeightCalculator, thetaExitGuard);
 
         ringBuffer = disruptor.start();
     }
