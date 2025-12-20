@@ -109,4 +109,37 @@ Instead of price charts, the UI (built via JavaFX or a Web TUI) must show:
 * **Upstox API v3 Documentation:** [Order Placement V3](https://upstox.com/developer/api-documentation/v3/place-order/) and [Market Data Feed V3](https://upstox.com/developer/api-documentation/v3/get-market-data-feed/).
 
 ---
+ ---
  
+# NFRs
+
+
+#### **Requirement 1: Non-Blocking Data Ingestion**
+
+* Implement an **LMAX Disruptor (v4.0)** Ring Buffer.
+* The `UpstoxProtobufListener` (Producer) must decode binary packets and publish to the Ring Buffer in `< 10 microseconds`.
+* Use **Java 21 Virtual Threads** to manage the heartbeat and connection monitoring of the WebSocket.
+
+#### **Requirement 2: State-Aware Volume Bar Factory**
+
+* Create a `VolumeBarGenerator` that maintains an in-memory "running state" for all 250 instruments.
+* Logic: Accumulate `tick_volume`. When `sum >= threshold`, finalize the bar, calculate `OHLCV + Vwap + OBI`, and persist to QuestDB.
+* **Crucial:** Use a `ConcurrentHashMap` or a lock-free array to store instrument states to avoid thread contention.
+
+#### **Requirement 3: The "Auction Market Theory" Signal Engine**
+
+* **OBI (Order Book Imbalance):** Calculate every tick using `tbq` and `tsq`.
+* **CVD (Cumulative Volume Delta):** Track buy-side vs. sell-side aggression.
+* **Dynamic Handover:** When Nifty Spot moves 50 points, the system must unsub from the old "OOM" strikes and sub to the new "ATM" strikes without dropping the main feed.
+
+#### **Requirement 4: QuestDB Stability Guardrails**
+
+* Mandatory use of the **QuestDB Java ILP Client** (TCP transport).
+* Table configuration: `WAL Enabled`, `Partition by DAY`.
+* Implement an **Async Flush Strategy**: Commit every 1,000 rows or 500ms (whichever is first) to prevent WAL lag.
+
+#### **Requirement 5: Backtesting Replay Engine**
+
+* Implement a `MarketDataReplayer` that queries QuestDB for raw ticks and pushes them through the same Disruptor used in live trading.
+* The Strategy Engine must be **"Source Agnostic"** (it shouldn't know if the data is from WSS or QuestDB).
+---
