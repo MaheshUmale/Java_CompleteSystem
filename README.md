@@ -140,6 +140,18 @@ Instead of price charts, the UI (built via JavaFX or a Web TUI) must show:
 
 #### **Requirement 5: Backtesting Replay Engine**
 
+
+## Additonal info :
+MarketDataFeed.proto latest file is V3 and you may not need  file directly
+
+https://github.com/upstox/upstox-java
+THIS PACKAGE HAVE needed file with implementation of client ...
+https://github.com/upstox/upstox-java/tree/master/examples/websocket/market_data/v3
+
+Still if you need the file location is as below
+
+https://assets.upstox.com/feed/market-data-feed/v3/MarketDataFeed.proto
+
 * Implement a `MarketDataReplayer` that queries QuestDB for raw ticks and pushes them through the same Disruptor used in live trading.
 * The Strategy Engine must be **"Source Agnostic"** (it shouldn't know if the data is from WSS or QuestDB).
 ---
