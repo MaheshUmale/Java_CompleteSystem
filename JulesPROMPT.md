@@ -84,4 +84,35 @@ Paste the Master Prompt into Jules.
 
 Monitor the Ingestion: Once Jules generates the code, check the QuestDB logs. If you see ILP connections established, the "foundation" is successfully laid.
 
+==========STD ===========
+# Core GC Strategy: Generational ZGC (New in Java 21)
+-XX:+UseZGC -XX:+ZGenerational 
+
+# Memory Management (Fixed Heap for Predictability)
+-Xms8g -Xmx8g -XX:+AlwaysPreTouch 
+
+# Latency Guardrails
+-XX:MaxGCPauseMillis=1 
+-XX:-ZUncommit 
+-XX:+UseNUMA 
+
+# Advanced Memory Optimizations
+-XX:+UseLargePages 
+-XX:+UseTransparentHugePages 
+-XX:+UseStringDeduplication 
+
+# Profiling and Diagnostics
+-Xlog:gc*:file=gc.log:time,level,tags 
+-XX:+StartFlightRecording=filename=recording.jfr,settings=profile
+===============================
+
+
+
+3. The "Mechanical Sympathy" Code Rules for JULESTo complement the JVM tuning, Jules must follow these coding patterns to avoid Allocation Pressure:Object Pooling: Jules should pre-allocate the MarketEvent objects in the Disruptor. Instead of new MarketEvent(), the system should use ringBuffer.get(sequence) and then setFields().False Sharing Protection: Since you are an Architect, instruct Jules to use the @Contended annotation or manual long-padding in the VolumeBar state objects. This prevents CPU cache lines from bouncing between cores.Off-Heap Data (Optional): If you decide to cache 10GB+ of historical ticks in-memory for fast replay, tell Jules to use DirectByteBuffer to keep that data outside the GC's reach entirely.4. Final Verification StepOnce Jules generates the system, run a latency profile during market hours:Check GC Logs: Ensure the line Pause (End) never shows a value $> 1ms$.Check Disruptor Lag: Monitor RingBuffer.remainingCapacity(). If it ever drops to 0, it means your QuestDB Writer is slower than the market feed.Summary of the JULES HandoverYou now have a complete, watertight specification:Architecture: Java 21 + LMAX Disruptor + QuestDB.Data Model: Volume-Based Bars (Tick-Native).Logic: OBI + CVD + Theta-Exit.Build: High-performance pom.xml.Runtime: Generational ZGC Tuning.You are ready to proceed with JULES. This foundation is as robust as a professional institutional desk.
+
+
+
+
+
+
 
