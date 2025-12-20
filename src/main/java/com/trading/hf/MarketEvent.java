@@ -15,6 +15,7 @@ public class MarketEvent {
     private double iv;
     private double atp;
     private long ts;
+    private double theta;
 
     // Padding to prevent false sharing
     private long p1, p2, p3, p4, p5, p6, p7;
@@ -113,6 +114,14 @@ public class MarketEvent {
 
     public void setTs(long ts) {
         this.ts = ts;
+    }
+
+    public double getTheta() {
+        return theta;
+    }
+
+    public void setTheta(double theta) {
+        this.theta = theta;
     }
 
     public final static EventFactory<MarketEvent> EVENT_FACTORY = MarketEvent::new;
