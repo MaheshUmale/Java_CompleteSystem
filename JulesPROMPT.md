@@ -110,6 +110,85 @@ Monitor the Ingestion: Once Jules generates the code, check the QuestDB logs. If
 
 3. The "Mechanical Sympathy" Code Rules for JULESTo complement the JVM tuning, Jules must follow these coding patterns to avoid Allocation Pressure:Object Pooling: Jules should pre-allocate the MarketEvent objects in the Disruptor. Instead of new MarketEvent(), the system should use ringBuffer.get(sequence) and then setFields().False Sharing Protection: Since you are an Architect, instruct Jules to use the @Contended annotation or manual long-padding in the VolumeBar state objects. This prevents CPU cache lines from bouncing between cores.Off-Heap Data (Optional): If you decide to cache 10GB+ of historical ticks in-memory for fast replay, tell Jules to use DirectByteBuffer to keep that data outside the GC's reach entirely.4. Final Verification StepOnce Jules generates the system, run a latency profile during market hours:Check GC Logs: Ensure the line Pause (End) never shows a value $> 1ms$.Check Disruptor Lag: Monitor RingBuffer.remainingCapacity(). If it ever drops to 0, it means your QuestDB Writer is slower than the market feed.Summary of the JULES HandoverYou now have a complete, watertight specification:Architecture: Java 21 + LMAX Disruptor + QuestDB.Data Model: Volume-Based Bars (Tick-Native).Logic: OBI + CVD + Theta-Exit.Build: High-performance pom.xml.Runtime: Generational ZGC Tuning.You are ready to proceed with JULES. This foundation is as robust as a professional institutional desk.
 
+-------------------
+To ensure our requirement document is truly "watertight" for **Google Jules**, we need to include the specific **dynamic logic** that bridges the gap between raw data and actionable signals.
+
+The missing link in previous discussions was the **Index Weightage Engine** and the **Dynamic Option Selection Service**. These are not static values; they change with every tick.
+
+---
+
+# ADDENDUM: Dynamic Logic & Weightage Engine
+
+## 1. The Weighted Index Volume Engine
+
+Since Nifty 50 and BankNifty are weighted indices, looking at total volume is misleading. We must calculate the **"Index Buy/Sell Pressure"** based on the actual index weights.
+
+* **Logic:** For the 50 stocks in Nifty, we calculate a **Weighted Delta**.
+* **Formula:** 
+
+* **Implementation for JULES:**
+* **Weight Map:** Maintain a `Map<String, Double>` of the latest NSE weights (e.g., HDFCBANK: 13%, RELIANCE: 9%).
+* **The Calculation:** As ticks come in for Reliance or HDFC, update their specific Delta. Every 100ms, the `SignalEngine` must compute the aggregate **Index Pressure**.
+* **Why?** If Reliance (Heavyweight) has a negative OBI but 40 small stocks have positive OBI, the Index will likely fall. This engine prevents you from being "faked out" by minor stocks.
+
+
+
+---
+
+## 2. Dynamic ATM ± 2 Strike Manager
+
+A static list of options is useless in a volatile auction. JULES must "follow" the price.
+
+* **Logic:** The system must maintain a "Sliding Window" of active option subscriptions.
+* **Requirement:**
+1. **Monitor Spot:** Track Nifty Spot (e.g., 24,512).
+2. **Define ATM:** Round Spot to nearest 50 (ATM = 24,500).
+3. **The Window:** Automatically subscribe to  (Calls) and  (Puts).
+4. **The Handover Logic:** * If Spot moves to 24,560, the new ATM is 24,550.
+* JULES must send a **New Subscription** request for 24,650 (New ATM+2) and **Unsubscribe** from 24,400 (Old ATM-2).
+
+
+
+
+* **Implementation:** Use a `StatefulOptionManager` class that compares `currentATM` vs `lastSubscribedATM` on every spot price tick.
+
+---
+
+## 3. Order Flow Delta (Aggressor Identification)
+
+In Upstox v3, we get the `side` or can derive it from the `LTP` vs `Bid/Ask`.
+
+* **Logic:**
+* If `LTP >= AskPrice`  **Aggressive Buyer** (Hit the Ask).
+* If `LTP <= BidPrice`  **Aggressive Seller** (Hit the Bid).
+
+
+* **Signal:** JULES must calculate **Cumulative Delta** per Volume Bar.
+* If a Volume Bar closes with a **Positive Delta** of , it's a "Conviction Auction."
+* If a Volume Bar has high total volume but **Low Delta** (near 0), it is "Churn" or "Absorption" (Sellers are absorbing buyers). **Do not trade churn.**
+
+
+
+---
+
+## 4. Revised "Master Prompt" Section for JULES
+
+Add this specific technical block to your request to Jules:
+
+> **"Jules, implement a `WeightedVolumeEngine`. Use the provided JSON map of Nifty50 weights to calculate a real-time `WeightedIndexDelta`. Additionally, implement a `DynamicStrikeSubscriber` that monitors the Nifty Spot price and maintains a rolling subscription of ATM ± 2 strikes via the Upstox WebSocket. When the ATM changes, the system must asynchronously update subscriptions without interrupting the data flow of the existing active trades."**
+
+---
+
+### Final Architectural Verification Table
+
+| Feature | Logic Requirement | Why this is critical? |
+| --- | --- | --- |
+| **Weighted Volume** |  | Avoids "false breakouts" caused by low-weight stocks. |
+| **ATM ± 2 Manager** | Auto-Sub/Unsub on Spot move | Ensures you always have liquidity and high Delta in your tradable options. |
+| **Tick-Level Side** | LTP vs Bid/Ask comparison | Identifies "Aggressive" vs "Passive" participants (The core of AMT). |
+| **V3 Protobuf** | Binary decoding logic | Reduces latency from ~200ms (JSON) to ~10ms (Binary). |
+
+**I have now refined the entire plan to include these dynamic requirements. Would you like me to generate the specific `IndexWeights.json` structure for Jules to use in the weightage calculation?**
 
 
 
