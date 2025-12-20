@@ -6,10 +6,6 @@ import com.lmax.disruptor.dsl.EventHandlerGroup;
 import com.lmax.disruptor.dsl.ProducerType;
 import com.lmax.disruptor.YieldingWaitStrategy;
 import java.util.concurrent.ThreadFactory;
-import java.util.ArrayList;
-import java.util.List;
-import com.lmax.disruptor.EventHandler;
-
 
 public class DisruptorManager {
 
@@ -27,14 +23,13 @@ public class DisruptorManager {
                 new YieldingWaitStrategy()
         );
 
-        List<EventHandler<MarketEvent>> handlers = new ArrayList<>();
-        handlers.add(volumeBarGenerator);
-        handlers.add(indexWeightCalculator);
-        if (questDBWriter != null) {
-            handlers.add(questDBWriter);
-        }
+        // Start with the mandatory handlers
+        EventHandlerGroup<MarketEvent> handlerGroup = disruptor.handleEventsWith(volumeBarGenerator, indexWeightCalculator);
 
-        disruptor.handleEventsWith(handlers.toArray(new EventHandler[0]));
+        // Conditionally add the QuestDB writer if it's enabled
+        if (questDBWriter != null) {
+            handlerGroup.then(questDBWriter);
+        }
 
         ringBuffer = disruptor.start();
     }

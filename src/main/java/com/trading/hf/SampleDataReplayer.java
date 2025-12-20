@@ -1,0 +1,144 @@
+package com.trading.hf;
+
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+import com.lmax.disruptor.RingBuffer;
+
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.lang.reflect.Type;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
+import java.util.zip.GZIPInputStream;
+
+public class SampleDataReplayer {
+
+    private final RingBuffer<MarketEvent> ringBuffer;
+    private final String dataDirectory;
+    private final Gson gson = new Gson();
+
+    // Hardcoded list of data files for reliability
+    private final List<String> dataFiles = Arrays.asList(
+            "NSE_EQ_INE027H01010_data.json.json.gz",
+            "NSE_EQ_INE118H01025_data.json.json.gz",
+            "NSE_EQ_INE465A01025_data.json.json.gz",
+            "NSE_EQ_INE811K01011_data.json.json.gz",
+            "NSE_FO_51414_data.json.json.gz",
+            "NSE_FO_51420_data.json.json.gz",
+            "NSE_FO_51460_data.json.json.gz",
+            "NSE_FO_51461_data.json.json.gz",
+            "NSE_FO_51498_data.json.json.gz",
+            "NSE_FO_51502_data.json.json.gz",
+            "NSE_FO_51507_data.json.json.gz",
+            "NSE_FO_51510_data.json.json.gz",
+            "NSE_FO_60166_data.json.json.gz"
+    );
+
+    public SampleDataReplayer(RingBuffer<MarketEvent> ringBuffer, String dataDirectory) {
+        this.ringBuffer = ringBuffer;
+        this.dataDirectory = dataDirectory;
+    }
+
+    public void start() {
+        System.out.println("Starting data replay from classpath directory: " + dataDirectory);
+        for (String fileName : dataFiles) {
+            processFile(dataDirectory + "/" + fileName);
+        }
+        System.out.println("Data replay finished.");
+    }
+
+    private void processFile(String filePath) {
+        System.out.println("Processing file: " + filePath);
+        try (InputStream is = getClass().getClassLoader().getResourceAsStream(filePath);
+             BufferedReader reader = new BufferedReader(new InputStreamReader(new GZIPInputStream(Objects.requireNonNull(is))))) {
+
+            String jsonData = reader.lines().collect(Collectors.joining());
+            Type type = new TypeToken<List<Map<String, Object>>>() {}.getType();
+            List<Map<String, Object>> dataList = gson.fromJson(jsonData, type);
+
+            for (Map<String, Object> data : dataList) {
+                publishMarketUpdate(data);
+            }
+
+        } catch (Exception e) {
+            System.err.println("Error processing file " + filePath + ": " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void publishMarketUpdate(Map<String, Object> data) {
+        try {
+            Map<String, Object> feeds = (Map<String, Object>) data.get("feeds");
+            if (feeds == null || feeds.isEmpty()) {
+                return;
+            }
+
+            String instrumentKey = feeds.keySet().iterator().next();
+            Map<String, Object> feedData = (Map<String, Object>) feeds.get(instrumentKey);
+            Map<String, Object> ff = (Map<String, Object>) feedData.get("fullFeed");
+
+            Map<String, Object> marketData = (Map<String, Object>) ff.get("marketFF");
+            if (marketData == null) {
+                marketData = (Map<String, Object>) ff.get("indexFF");
+            }
+            if (marketData == null) return;
+
+            Map<String, Object> ltpc = (Map<String, Object>) marketData.get("ltpc");
+            if (ltpc == null) return;
+
+            double ltp = ((Number) ltpc.get("ltp")).doubleValue();
+            long ltq = Long.parseLong((String) ltpc.get("ltq"));
+            long ltt = Long.parseLong((String) ltpc.get("ltt"));
+            double cp = ((Number) ltpc.get("cp")).doubleValue();
+
+            double tbq = 0, tsq = 0, atp = 0, oi = 0;
+            long vtt = 0;
+            double bestBidPrice = 0, bestAskPrice = 0;
+
+            if (marketData.containsKey("tbq")) tbq = ((Number) marketData.get("tbq")).doubleValue();
+            if (marketData.containsKey("tsq")) tsq = ((Number) marketData.get("tsq")).doubleValue();
+            if (marketData.containsKey("atp")) atp = ((Number) marketData.get("atp")).doubleValue();
+            if (marketData.containsKey("vtt")) vtt = Long.parseLong((String) marketData.get("vtt"));
+            if (marketData.containsKey("oi")) oi = ((Number) marketData.get("oi")).doubleValue();
+
+            if (marketData.containsKey("marketLevel")) {
+                Map<String, Object> marketLevel = (Map<String, Object>) marketData.get("marketLevel");
+                List<Map<String, Object>> bidAskQuote = (List<Map<String, Object>>) marketLevel.get("bidAskQuote");
+                if (bidAskQuote != null && !bidAskQuote.isEmpty()) {
+                    bestBidPrice = ((Number) bidAskQuote.get(0).get("bidP")).doubleValue();
+                    bestAskPrice = ((Number) bidAskQuote.get(0).get("askP")).doubleValue();
+                }
+            }
+
+            long sequence = ringBuffer.next();
+            try {
+                MarketEvent event = ringBuffer.get(sequence);
+                event.setSymbol(instrumentKey);
+                event.setLtp(ltp);
+                event.setLtt(ltt);
+                event.setLtq(ltq);
+                event.setCp(cp);
+                event.setTbq(tbq);
+                event.setTsq(tsq);
+                event.setVtt(vtt);
+                event.setOi(oi);
+                event.setIv(0);
+                event.setAtp(atp);
+                event.setTs(ltt);
+                event.setBestBidPrice(bestBidPrice);
+                event.setBestAskPrice(bestAskPrice);
+            } finally {
+                ringBuffer.publish(sequence);
+            }
+
+        } catch (Exception e) {
+            System.err.println("Error mapping data: " + e.getMessage() + " on line " + gson.toJson(data));
+            e.printStackTrace();
+        }
+    }
+}
