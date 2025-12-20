@@ -109,7 +109,4 @@ Instead of price charts, the UI (built via JavaFX or a Web TUI) must show:
 * **Upstox API v3 Documentation:** [Order Placement V3](https://upstox.com/developer/api-documentation/v3/place-order/) and [Market Data Feed V3](https://upstox.com/developer/api-documentation/v3/get-market-data-feed/).
 
 ---
-
-### Final High-Value Next Step
-
-**Would you like me to generate the "Master Prompt" for Jules?** This is the specific, structured text you will paste into the Jules coding agent to begin the actual code generation based on this architectural document.
+ 
