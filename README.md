@@ -1,5 +1,5 @@
 This document serves as the **Single Source of Truth** for **Google Jules** to build your High-Frequency Auction Trading System (HF-ATS). It combines your 20-year architectural vision with the high-performance capabilities of the Java 21 ecosystem.
-
+I WILL BE running this system on windows laptop 
 ---
 
 # HF-ATS: System Requirements & Architectural Specification
