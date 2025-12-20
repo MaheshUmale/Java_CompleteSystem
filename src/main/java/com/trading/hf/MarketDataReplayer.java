@@ -1,10 +1,8 @@
 package com.trading.hf;
 
 import com.lmax.disruptor.RingBuffer;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.Statement;
+
+import java.sql.*;
 import java.time.Instant;
 
 public class MarketDataReplayer {
@@ -18,26 +16,28 @@ public class MarketDataReplayer {
     }
 
     public void replay(String symbol, Instant startTime, Instant endTime) {
-        String query = String.format(
-                "SELECT * FROM ticks WHERE symbol = '%s' AND ts BETWEEN '%s' AND '%s' ORDER BY ts ASC",
-                symbol, startTime, endTime
-        );
+        String query = "SELECT * FROM ticks WHERE symbol = ? AND ts BETWEEN ? AND ? ORDER BY ts ASC";
 
         try (Connection conn = DriverManager.getConnection(questdbConnectionString);
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(query)) {
+             PreparedStatement stmt = conn.prepareStatement(query)) {
 
-            while (rs.next()) {
-                long sequence = ringBuffer.next();
-                try {
-                    MarketEvent event = ringBuffer.get(sequence);
-                    event.setSymbol(rs.getString("symbol"));
-                    event.setLtp(rs.getDouble("ltp"));
-                    event.setLtq(rs.getLong("ltq"));
-                    event.setLtt(rs.getTimestamp("ts").getTime());
-                    // ... set other fields from the result set
-                } finally {
-                    ringBuffer.publish(sequence);
+            stmt.setString(1, symbol);
+            stmt.setTimestamp(2, Timestamp.from(startTime));
+            stmt.setTimestamp(3, Timestamp.from(endTime));
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    long sequence = ringBuffer.next();
+                    try {
+                        MarketEvent event = ringBuffer.get(sequence);
+                        event.setSymbol(rs.getString("symbol"));
+                        event.setLtp(rs.getDouble("ltp"));
+                        event.setLtq(rs.getLong("ltq"));
+                        event.setTs(rs.getTimestamp("ts").getTime());
+                        // ... set other fields from the result set
+                    } finally {
+                        ringBuffer.publish(sequence);
+                    }
                 }
             }
         } catch (Exception e) {
