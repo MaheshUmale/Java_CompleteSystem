@@ -1,5 +1,5 @@
  
-Based on the image tradingcockpit.png I generated for you, let’s break down the **6-Widget Design Strategy** to ensure it aligns perfectly with your Nifty Options Buying requirements.
+Based on the image TradingCockpit.png I generated for you, let’s break down the **6-Widget Design Strategy** to ensure it aligns perfectly with your Nifty Options Buying requirements.
 
 ---
 
