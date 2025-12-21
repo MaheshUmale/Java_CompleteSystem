@@ -1,5 +1,4 @@
-This **Master Prompt** is designed for the [Google Jules](https://jules.google/) coding agent. It is a precise, technical specification that minimizes ambiguity and ensures the agent follows the "Mechanical Sympathy" architecture we've discussed.
-
+ 
 ###  DO IT ITERATIVELY AND BACKTEST WITH DUMMY DATA 
 ---
 
