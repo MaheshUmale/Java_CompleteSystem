@@ -23,7 +23,11 @@ public class DashboardService {
                 System.out.println("Dashboard client connected.");
                 // Immediately send the last known message to the new client
                 if (lastMessage.get() != null) {
-                    ctx.send(lastMessage.get());
+                    try {
+                        ctx.send(lastMessage.get());
+                    } catch (Exception e) {
+                        System.err.println("Failed to send last message to newly connected client: " + e.getMessage());
+                    }
                 }
             });
             ws.onClose(ctx -> {
@@ -48,7 +52,13 @@ public class DashboardService {
         lastMessage.set(message); // Cache the latest message
         sessions.forEach(session -> {
             if (session.session.isOpen()) {
-                session.send(message);
+                try {
+                    session.send(message);
+                } catch (Exception e) {
+                    System.err.println("Failed to send message to client, removing session: " + e.getMessage());
+                    // Optionally remove the session here if an error occurs
+                    // sessions.remove(session);
+                }
             }
         });
     }

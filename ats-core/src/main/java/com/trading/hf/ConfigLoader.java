@@ -1,20 +1,47 @@
 package com.trading.hf;
 
+import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.Properties;
 
 public class ConfigLoader {
 
     private static final Properties properties = new Properties();
+    private static final String CONFIG_FILE = "config.properties";
 
     static {
-        try (InputStream input = ConfigLoader.class.getClassLoader().getResourceAsStream("config.properties")) {
+        InputStream input = null;
+        try {
+            // First, try loading from the classpath
+            input = ConfigLoader.class.getClassLoader().getResourceAsStream(CONFIG_FILE);
+
             if (input == null) {
-                System.out.println("Sorry, unable to find config.properties");
+                // If not found, try loading from the filesystem (current directory)
+                System.out.println("Could not find " + CONFIG_FILE + " on classpath, trying filesystem...");
+                try {
+                    input = new FileInputStream(CONFIG_FILE);
+                } catch (Exception e) {
+                    System.out.println("Could not find " + CONFIG_FILE + " on filesystem either.");
+                    // Still continue, might be using defaults or env vars
+                }
             }
-            properties.load(input);
+
+            if (input != null) {
+                properties.load(input);
+            } else {
+                 System.out.println("WARNING: config.properties not found. Using default values.");
+            }
+
         } catch (Exception ex) {
             ex.printStackTrace();
+        } finally {
+            if (input != null) {
+                try {
+                    input.close();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
         }
     }
 

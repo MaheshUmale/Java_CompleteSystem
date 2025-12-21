@@ -3,6 +3,7 @@ package com.trading.hf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.HashMap;
@@ -24,6 +25,10 @@ public class SignalEngine {
 
     public SignalEngine(AuctionProfileCalculator auctionProfileCalculator) {
         this.auctionProfileCalculator = auctionProfileCalculator;
+    }
+
+    public AuctionState getAuctionState(String symbol) {
+        return auctionStates.getOrDefault(symbol, AuctionState.ROTATION);
     }
 
     public void onVolumeBar(VolumeBar bar) {

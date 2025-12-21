@@ -9,7 +9,7 @@ import SentimentWidget from './components/SentimentWidget';
 import './index.css';
 
 function App() {
-  const data = useWebSocketBuffer('ws://localhost:7070');
+  const data = useWebSocketBuffer('ws://localhost:7070/data');
 
   return (
     <div className="bg-[#0A0E17] min-h-screen p-4 text-white">
