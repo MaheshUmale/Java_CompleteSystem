@@ -1,13 +1,13 @@
 const WebSocket = require('ws');
 
-const wss = new WebSocket.Server({ port: 8080 });
+const wss = new WebSocket.Server({ port: 7070 });
 
 // Simulation Variables
 let spot = 24650.00;
 let timeRemaining = 1200; // 20 minutes in seconds for Theta-Guard
 let mode = 'NORMAL'; // Switch to 'VOLATILE' to test RBI Event
 
-console.log("JULES-HF-ATS Mock Server started on ws://localhost:8080");
+console.log("JULES-HF-ATS Mock Server started on ws://localhost:7070");
 
 wss.on('connection', (ws) => {
   const interval = setInterval(() => {
