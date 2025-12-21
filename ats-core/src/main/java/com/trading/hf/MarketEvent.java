@@ -16,9 +16,27 @@ public class MarketEvent {
     private double atp;
     private long ts;
     private double theta;
+    private double bestBidPrice;
+    private double bestAskPrice;
 
     // Padding to prevent false sharing
     private long p1, p2, p3, p4, p5, p6, p7;
+
+    public double getBestBidPrice() {
+        return bestBidPrice;
+    }
+
+    public void setBestBidPrice(double bestBidPrice) {
+        this.bestBidPrice = bestBidPrice;
+    }
+
+    public double getBestAskPrice() {
+        return bestAskPrice;
+    }
+
+    public void setBestAskPrice(double bestAskPrice) {
+        this.bestAskPrice = bestAskPrice;
+    }
 
     public String getSymbol() {
         return symbol;

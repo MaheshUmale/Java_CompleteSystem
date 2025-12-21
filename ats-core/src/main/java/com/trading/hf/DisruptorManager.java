@@ -2,10 +2,14 @@ package com.trading.hf;
 
 import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.dsl.Disruptor;
+import com.lmax.disruptor.dsl.EventHandlerGroup;
 import com.lmax.disruptor.dsl.ProducerType;
 import com.lmax.disruptor.YieldingWaitStrategy;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
+import java.util.ArrayList;
+import java.util.List;
+import com.lmax.disruptor.EventHandler;
+
 
 public class DisruptorManager {
 
@@ -23,7 +27,14 @@ public class DisruptorManager {
                 new YieldingWaitStrategy()
         );
 
-        disruptor.handleEventsWith(questDBWriter, volumeBarGenerator, indexWeightCalculator);
+        List<EventHandler<MarketEvent>> handlers = new ArrayList<>();
+        handlers.add(volumeBarGenerator);
+        handlers.add(indexWeightCalculator);
+        if (questDBWriter != null) {
+            handlers.add(questDBWriter);
+        }
+
+        disruptor.handleEventsWith(handlers.toArray(new EventHandler[0]));
 
         ringBuffer = disruptor.start();
     }
