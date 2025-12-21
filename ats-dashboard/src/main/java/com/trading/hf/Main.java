@@ -17,7 +17,12 @@ public class Main {
         boolean dashboardEnabled = Boolean.parseBoolean(ConfigLoader.getProperty("dashboard.enabled", "true"));
         QuestDBWriter questDBWriter = questDbEnabled ? new QuestDBWriter() : null;
 
+        AuctionProfileCalculator auctionProfileCalculator = new AuctionProfileCalculator();
+        SignalEngine signalEngine = new SignalEngine(auctionProfileCalculator);
+
         VolumeBarGenerator volumeBarGenerator = new VolumeBarGenerator(volumeThreshold, bar -> {
+            auctionProfileCalculator.onVolumeBar(bar);
+            signalEngine.onVolumeBar(bar);
             System.out.println(String.format("New Volume Bar: %s | O: %.2f H: %.2f L: %.2f C: %.2f V: %d",
                     bar.getSymbol(), bar.getOpen(), bar.getHigh(), bar.getLow(), bar.getClose(), bar.getVolume()));
         });
@@ -98,6 +103,13 @@ public class Main {
             }
 
             replayer.start(); // This will block until replay is complete
+
+            try {
+                // Give logs a moment to flush before shutting down
+                Thread.sleep(2000);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
 
             System.out.println("Simulation finished. Shutting down.");
             disruptorManager.shutdown();
