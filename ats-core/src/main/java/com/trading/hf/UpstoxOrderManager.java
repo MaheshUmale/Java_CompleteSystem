@@ -12,12 +12,14 @@ import com.upstox.api.PlaceOrderResponse;
 public class UpstoxOrderManager {
 
     private final OrderApi orderApi;
+    private final PositionManager positionManager;
 
-    public UpstoxOrderManager(String accessToken) {
+    public UpstoxOrderManager(String accessToken, PositionManager positionManager) {
         ApiClient defaultClient = Configuration.getDefaultApiClient();
         OAuth oAuth = (OAuth) defaultClient.getAuthentication("OAUTH2");
         oAuth.setAccessToken(accessToken);
         this.orderApi = new OrderApi(defaultClient);
+        this.positionManager = positionManager;
     }
 
     public PlaceOrderResponse placeOrder(String instrumentKey, int quantity, String side, String orderType, double price) {
@@ -34,7 +36,12 @@ public class UpstoxOrderManager {
             body.setTriggerPrice(0.0f);
             body.setIsAmo(false);
 
-            return orderApi.placeOrder(body, "2.0");
+            PlaceOrderResponse response = orderApi.placeOrder(body, "2.0");
+            if (response != null && response.getStatus().equals("success")) {
+                // TODO: Use the actual fill price from the order response
+                positionManager.addPosition(instrumentKey, quantity, side, price, System.currentTimeMillis());
+            }
+            return response;
         } catch (ApiException e) {
             System.err.println("Error placing order: " + e.getResponseBody());
             return null;
