@@ -23,7 +23,7 @@ public class AuctionProfileCalculator {
         MarketProfile profile = profiles.get(symbol);
         if (profile != null) {
             synchronized (profile) {
-                return profile;
+                return new MarketProfile(profile);
             }
         }
         return null;
@@ -35,6 +35,16 @@ public class AuctionProfileCalculator {
         private double vah;
         private double val;
         private long totalVolume;
+
+        public MarketProfile() {}
+
+        public MarketProfile(MarketProfile other) {
+            this.volumeAtPrice.putAll(other.volumeAtPrice);
+            this.poc = other.poc;
+            this.vah = other.vah;
+            this.val = other.val;
+            this.totalVolume = other.totalVolume;
+        }
 
         public void addVolume(double price, long volume) {
             volumeAtPrice.put(price, volumeAtPrice.getOrDefault(price, 0L) + volume);
@@ -86,6 +96,10 @@ public class AuctionProfileCalculator {
 
         public double getVal() {
             return val;
+        }
+
+        public TreeMap<Double, Long> getVolumeAtPrice() {
+            return volumeAtPrice;
         }
     }
 }
