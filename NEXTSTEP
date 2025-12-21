@@ -1,0 +1,20 @@
+## Next Steps for HF-ATS Development
+
+Based on the project's `README.md`, the following high-level tasks remain:
+
+### Phase 2: The Flow
+- Setup the LMAX Disruptor Ring Buffer.
+- Implement the `QuestDBWriter` using the InfluxDB Line Protocol (ILP).
+
+### Phase 3: The Logic
+- Implement the `VolumeBarGenerator`.
+- Implement the `IndexWeightCalculator`.
+- Implement the "Theta-Exit" guard.
+- Implement the Dynamic ATM Handover.
+
+### Phase 4: The Execution
+- Build the `OrderManager` using Upstox v3 Order APIs with OAuth2 authentication.
+
+### Phase 5: Verification
+- Build a basic "Tick-to-Bar" CLI to verify that ticks are being captured and aggregated without loss.
+- Implement the Backtesting & Replay Engine.
