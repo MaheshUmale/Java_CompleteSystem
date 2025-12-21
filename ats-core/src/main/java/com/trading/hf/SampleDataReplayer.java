@@ -35,8 +35,10 @@ public class SampleDataReplayer implements IDataReplayer {
 
     public void start() {
         System.out.println("Starting data replay from classpath directory: " + dataDirectory);
-        for (String fileName : dataFiles) {
-            processFile(dataDirectory + "/" + fileName);
+        for (int i = 0; i < 10; i++) {
+            for (String fileName : dataFiles) {
+                processFile(dataDirectory + "/" + fileName);
+            }
         }
         System.out.println("Data replay finished.");
     }
