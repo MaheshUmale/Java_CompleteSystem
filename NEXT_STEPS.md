@@ -2,7 +2,17 @@
 
 This document outlines the remaining tasks for the HF-ATS project.
 
-## 1. Implement Market Data Publishing
+## 1. Resolve Backtesting Environment Issue
+
+The immediate priority is to resolve the issue preventing the `MarketDataReplayer` from successfully querying the QuestDB database. The application is consistently failing with a `PSQLException: ERROR: Invalid column: ts`.
+
+**Next Actions:**
+
+*   Investigate the JDBC driver version and its compatibility with the QuestDB instance.
+*   Verify the exact timestamp format expected by the QuestDB instance running in the environment.
+*   Explore alternative query methods or JDBC settings to resolve the parsing issue.
+
+## 2. Implement Market Data Publishing
 
 The `UpstoxMarketDataStreamer` currently connects to the Upstox API but does not publish the received market data to the LMAX Disruptor. The `onUpdate` and `publishMarketUpdate` methods are commented out.
 
@@ -12,7 +22,7 @@ The `UpstoxMarketDataStreamer` currently connects to the Upstox API but does not
 *   Uncomment and complete the `publishMarketUpdate` method to map the `MarketUpdateV3` data to the `MarketEvent` POJO and publish it to the Disruptor's Ring Buffer.
 *   Implement the logic in the `onUpdate` method to call the `DynamicStrikeSubscriber` when the Nifty Spot price changes.
 
-## 2. Verify and Complete Core Components
+## 3. Verify and Complete Core Components
 
 Several core components are already in place but need to be verified and potentially completed.
 
@@ -23,7 +33,7 @@ Several core components are already in place but need to be verified and potenti
 *   **IndexWeightCalculator:** Verify that the `IndexWeightCalculator` is correctly calculating the weighted index delta based on the incoming tick data.
 *   **DynamicStrikeSubscriber:** Test the `DynamicStrikeSubscriber` to ensure that it is correctly identifying the new ATM strikes and that the subscription and unsubscription logic is working as expected.
 
-## 3. Implement "Theta-Exit" Guard
+## 4. Implement "Theta-Exit" Guard
 
 The "Theta-Exit" guard is a critical component of the trading logic that is not yet implemented.
 
@@ -33,7 +43,7 @@ The "Theta-Exit" guard is a critical component of the trading logic that is not 
 *   Create a `ThetaExitGuard` class that consumes `MarketEvent`s from the Disruptor.
 *   Implement the logic to monitor the time decay of option positions and trigger liquidation orders when necessary.
 
-## 4. Enhance Order Management
+## 5. Enhance Order Management
 
 The `UpstoxOrderManager` needs to be extended to support order modifications and cancellations.
 
@@ -42,7 +52,7 @@ The `UpstoxOrderManager` needs to be extended to support order modifications and
 *   Add `modifyOrder` and `cancelOrder` methods to the `UpstoxOrderManager`.
 *   Implement the underlying logic using the appropriate methods from the Upstox Java SDK.
 
-## 5. Performance Tuning and Optimization
+## 6. Performance Tuning and Optimization
 
 After the core features are in place, the system will require a thorough performance analysis.
 
