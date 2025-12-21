@@ -83,7 +83,20 @@ public class Main {
         } else {
             // --- Simulation Mode ---
             System.out.println("Starting application in SIMULATION mode.");
-            SampleDataReplayer replayer = new SampleDataReplayer(disruptorManager.getRingBuffer(), dataDirectory);
+
+            String replaySource = ConfigLoader.getProperty("replay.source", "sample_data");
+            IDataReplayer replayer;
+
+            switch (replaySource) {
+                case "sample_data":
+                    replayer = new SampleDataReplayer(disruptorManager.getRingBuffer(), dataDirectory);
+                    break;
+                // Add cases for other replay sources here in the future
+                default:
+                    System.err.println("FATAL: Unknown replay.source configured: " + replaySource);
+                    return;
+            }
+
             replayer.start(); // This will block until replay is complete
 
             System.out.println("Simulation finished. Shutting down.");

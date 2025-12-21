@@ -25,7 +25,15 @@ The application is event-driven. The `UpstoxMarketDataStreamer` (or the `SampleD
 
 ### 1. Configuration
 
-Before running the application, you must configure it by editing the `config.properties` file located in `ats-core/src/main/resources/`.
+Before running the application, you must first create your own `config.properties` file. A template is provided in `ats-core/src/main/resources/config.properties.example`.
+
+Copy this file to `config.properties` in the same directory:
+
+```bash
+cp ats-core/src/main/resources/config.properties.example ats-core/src/main/resources/config.properties
+```
+
+Then, you can edit your new `config.properties` file to set your configuration.
 
 ```properties
 # Application Run Mode: "live" or "simulation"
@@ -39,6 +47,12 @@ questdb.enabled=false
 
 # Dashboard UI
 dashboard.enabled=true
+
+# Simulation event delay in milliseconds
+simulation.event.delay.ms=10
+
+# Replay source: "sample_data" (for now)
+replay.source=sample_data
 ```
 
 **Configuration Flags:**
@@ -53,8 +67,30 @@ dashboard.enabled=true
     *   `true`: Starts the web-based dashboard, accessible at `http://localhost:7070`.
     *   `false`: Disables the dashboard.
 *   `upstox.accessToken`: Your personal access token for the Upstox API.
+*   `simulation.event.delay.ms`: The delay in milliseconds between each event in simulation mode. This is useful for slowing down the replay to a more realistic speed.
+*   `replay.source`: The source of data for the simulation. Currently, only `sample_data` is supported, which uses the generated data file.
 
-### 2. Build the Application
+### 2. Backtesting and Simulation
+
+The application provides a flexible system for backtesting and simulation.
+
+#### Controlling Simulation Speed
+
+You can control the speed of the simulation by setting the `simulation.event.delay.ms` property in the `config.properties` file. A higher value will result in a slower replay.
+
+#### Custom Data Sources
+
+The application uses a flexible data replay system that allows you to plug in your own data sources. To do this, you need to create a class that implements the `com.trading.hf.IDataReplayer` interface and then configure the `replay.source` property in the `config.properties` file to use your new replayer.
+
+#### Generating Sample Data
+
+The project includes a Python script to generate sample data with a predictable pattern. This is useful for testing the application's logic and visualizations. The format of the data is documented in `DATA_FORMAT.md`. To generate new data, run the following command from the project's root directory:
+
+```bash
+python3 scripts/generate_data.py
+```
+
+### 3. Build the Application
 
 The project is built using Apache Maven. To build the executable JAR, run the following command from the project's root directory:
 
@@ -64,7 +100,7 @@ mvn clean install
 
 This will compile the code and create a self-contained, executable JAR file in the `ats-dashboard/target/` directory.
 
-### 3. Run the Application
+### 4. Run the Application
 
 Once the build is complete, you can run the application using the following command:
 
@@ -74,7 +110,7 @@ java -jar ats-dashboard/target/ats-dashboard-1.0-SNAPSHOT-jar-with-dependencies.
 
 The application will start in the mode specified in your `config.properties` file.
 
-### 4. Access the Dashboard
+### 5. Access the Dashboard
 
 If you have `dashboard.enabled=true` in your configuration, you can access the dashboard by opening a web browser and navigating to:
 
