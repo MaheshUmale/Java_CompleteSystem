@@ -9,12 +9,12 @@ public class Main {
     public static void main(String[] args) {
         // --- Configuration ---
         String runMode = ConfigLoader.getProperty("run.mode", "simulation");
-        boolean questDbEnabled = Boolean.parseBoolean(ConfigLoader.getProperty("questdb.enabled", "false"));
+        boolean questDbEnabled = ConfigLoader.getBooleanProperty("questdb.enabled", false);
         long volumeThreshold = 500;
         String dataDirectory = "data";
 
         // --- Initialization ---
-        boolean dashboardEnabled = Boolean.parseBoolean(ConfigLoader.getProperty("dashboard.enabled", "true"));
+        boolean dashboardEnabled = ConfigLoader.getBooleanProperty("dashboard.enabled", true);
         QuestDBWriter questDBWriter = questDbEnabled ? new QuestDBWriter() : null;
         RawFeedWriter rawFeedWriter = new RawFeedWriter();
 
@@ -98,7 +98,7 @@ public class Main {
 
             switch (replaySource) {
                 case "sample_data":
-                    replayer = new MySampleDataReplayer(disruptorManager.getRingBuffer(), dataDirectory);
+                    replayer = new MySampleDataReplayer(disruptorManager.getMarketEventRingBuffer(), dataDirectory);
                     break;
                 // Add cases for other replay sources here in the future
                 default:

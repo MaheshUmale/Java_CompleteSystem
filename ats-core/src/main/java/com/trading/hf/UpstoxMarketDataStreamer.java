@@ -9,8 +9,6 @@ import com.upstox.feeder.MarketUpdateV3;
 import com.upstox.feeder.listener.OnMarketUpdateV3Listener;
 import com.upstox.feeder.listener.OnErrorListener;
 import com.upstox.feeder.constants.Mode;
-
-import java.util.ArrayList;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -41,90 +39,101 @@ public class UpstoxMarketDataStreamer {
         marketDataStreamer.setOnMarketUpdateListener(new OnMarketUpdateV3Listener() {
             @Override
             public void onUpdate(MarketUpdateV3 marketUpdate) {
-                 if (strikeSubscriber != null && marketUpdate.getInstrumentToken().equals("NSE_INDEX|Nifty 50")) {
-                     strikeSubscriber.onNiftySpotPrice(marketUpdate.getLtp());
-                 }
-                 publishMarketUpdate(marketUpdate);
+                if (marketUpdate.getFeeds() == null) return;
 
-                 if (persistenceEnabled) {
-                     publishRawFeedUpdate(marketUpdate);
-                 }
+                // Loop through the map: Key is instrumentToken, Value is Feed
+                marketUpdate.getFeeds().forEach((instrumentToken, feed) -> {
+
+                    // Handle Nifty Spot
+                    if (strikeSubscriber != null && "NSE_INDEX|Nifty 50".equals(instrumentToken)) {
+                        if (feed.getLtpc() != null) {
+                            strikeSubscriber.onNiftySpotPrice(feed.getLtpc().getLtp());
+                        }
+                    }
+
+                    publishMarketEvent(instrumentToken, feed);
+
+                    if (persistenceEnabled) {
+                        publishRawFeedUpdate(instrumentToken, feed);
+                    }
+                });
             }
         });
 
         marketDataStreamer.setOnErrorListener(new OnErrorListener() {
             @Override
             public void onError(Throwable t) {
-                System.err.println("Error in MarketDataStreamer: " + t.getMessage());
+                System.err.println("Upstox Streamer Error: " + t.getMessage());
             }
         });
     }
 
-    public void setStrikeSubscriber(DynamicStrikeSubscriber strikeSubscriber) {
-        this.strikeSubscriber = strikeSubscriber;
-    }
-
-    public void connect() {
-        marketDataStreamer.connect();
-    }
-
-    public void disconnect() {
-        marketDataStreamer.disconnect();
-    }
-
-    public void subscribe(Set<String> instrumentKeys) {
-        marketDataStreamer.subscribe(instrumentKeys, Mode.FULL);
-    }
-
-    public void unsubscribe(Set<String> instrumentKeys) {
-        marketDataStreamer.unsubscribe(instrumentKeys);
-    }
-
-    private void publishMarketUpdate(MarketUpdateV3 marketUpdate) {
+    private void publishMarketEvent(String token, MarketUpdateV3.Feed feed) {
         long sequence = marketEventRingBuffer.next();
-         try {
-             MarketEvent event = marketEventRingBuffer.get(sequence);
-             event.setSymbol(marketUpdate.getInstrumentToken());
-             event.setLtp(marketUpdate.getLtp());
-             event.setLtt(marketUpdate.getLtt());
-             event.setLtq(marketUpdate.getLtq());
-             event.setCp(marketUpdate.getClosePrice());
-             // Assuming tbq and tsq are total buy/sell quantities, which might be tbv/tsv
-             event.setTbq(marketUpdate.getTbv());
-             event.setTsq(marketUpdate.getTsv());
-             event.setVtt(marketUpdate.getVtt());
-             event.setOi(marketUpdate.getOi());
-             event.setIv(0); // IV not available in MarketUpdateV3
-             event.setAtp(marketUpdate.getAtp());
-             event.setTs(System.currentTimeMillis());
-         } finally {
-             marketEventRingBuffer.publish(sequence);
-         }
+        try {
+            MarketEvent event = marketEventRingBuffer.get(sequence);
+            event.setSymbol(token);
+
+            // LTPC block
+            if (feed.getLtpc() != null) {
+                event.setLtp(feed.getLtpc().getLtp());
+                event.setLtt(feed.getLtpc().getLtt());
+                event.setLtq(feed.getLtpc().getLtq());
+                event.setCp(feed.getLtpc().getCp());
+            }
+
+            // FullFeed -> MarketFullFeed block
+            if (feed.getFullFeed() != null && feed.getFullFeed().getMarketFF() != null) {
+                MarketUpdateV3.MarketFullFeed mff = feed.getFullFeed().getMarketFF();
+                event.setAtp(mff.getAtp());
+                event.setVtt(mff.getVtt());
+                event.setOi(mff.getOi());
+                event.setIv(mff.getIv());
+                event.setTbq((long)mff.getTbq());
+                event.setTsq((long)mff.getTsq());
+            }
+
+            event.setTs(System.currentTimeMillis());
+        } finally {
+            marketEventRingBuffer.publish(sequence);
+        }
     }
 
-    private void publishRawFeedUpdate(MarketUpdateV3 marketUpdate) {
+    private void publishRawFeedUpdate(String token, MarketUpdateV3.Feed feed) {
         long sequence = rawFeedRingBuffer.next();
         try {
             RawFeedEvent event = rawFeedRingBuffer.get(sequence);
-            event.setInstrumentKey(marketUpdate.getInstrumentToken());
-            event.setTimestamp(marketUpdate.getLtt() > 0 ? marketUpdate.getLtt() : System.currentTimeMillis());
-            event.setLtp(marketUpdate.getLtp());
-            event.setLtq(marketUpdate.getLtq());
+            event.setInstrumentKey(token);
 
-            event.setBids(
-                marketUpdate.getBids().stream()
-                    .map(b -> new RawFeedEvent.BookEntry(b.getPrice(), b.getQuantity(), b.getOrders()))
-                    .collect(Collectors.toList())
-            );
+            if (feed.getLtpc() != null) {
+                event.setLtp(feed.getLtpc().getLtp());
+            }
 
-            event.setAsks(
-                marketUpdate.getAsks().stream()
-                    .map(a -> new RawFeedEvent.BookEntry(a.getPrice(), a.getQuantity(), a.getOrders()))
-                    .collect(Collectors.toList())
-            );
+            // Handle Depth (Bids/Asks)
+            if (feed.getFullFeed() != null &&
+                feed.getFullFeed().getMarketFF() != null &&
+                feed.getFullFeed().getMarketFF().getMarketLevel() != null) {
 
+                var quotes = feed.getFullFeed().getMarketFF().getMarketLevel().getBidAskQuote();
+
+                if (quotes != null) {
+                    event.setBids(quotes.stream()
+                        .map(q -> new RawFeedEvent.BookEntry(q.getBidP(), (int)q.getBidQ(), 0))
+                        .collect(Collectors.toList()));
+
+                    event.setAsks(quotes.stream()
+                        .map(q -> new RawFeedEvent.BookEntry(q.getAskP(), (int)q.getAskQ(), 0))
+                        .collect(Collectors.toList()));
+                }
+            }
         } finally {
             rawFeedRingBuffer.publish(sequence);
         }
     }
+
+    public void setStrikeSubscriber(DynamicStrikeSubscriber subscriber) { this.strikeSubscriber = subscriber; }
+    public void connect() { marketDataStreamer.connect(); }
+    public void disconnect() { marketDataStreamer.disconnect(); }
+    public void subscribe(Set<String> instrumentKeys) { marketDataStreamer.subscribe(instrumentKeys, Mode.FULL); }
+    public void unsubscribe(Set<String> instrumentKeys) { marketDataStreamer.unsubscribe(instrumentKeys); }
 }
