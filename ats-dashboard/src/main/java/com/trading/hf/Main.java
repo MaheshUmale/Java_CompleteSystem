@@ -35,7 +35,7 @@ public class Main {
         );
 
         if (dashboardEnabled) {
-            com.trading.hf.dashboard.DashboardBridge.start(volumeBarGenerator);
+            com.trading.hf.dashboard.DashboardBridge.start(volumeBarGenerator, auctionProfileCalculator);
         }
 
         if ("live".equalsIgnoreCase(runMode)) {
@@ -103,13 +103,6 @@ public class Main {
             }
 
             replayer.start(); // This will block until replay is complete
-
-            try {
-                // Give logs a moment to flush before shutting down
-                Thread.sleep(2000);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
 
             System.out.println("Simulation finished. Shutting down.");
             disruptorManager.shutdown();

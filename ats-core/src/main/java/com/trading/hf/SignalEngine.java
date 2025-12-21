@@ -11,7 +11,7 @@ public class SignalEngine {
     private static final Logger logger = LoggerFactory.getLogger(SignalEngine.class);
 
     private final AuctionProfileCalculator auctionProfileCalculator;
-    private final Map<String, AuctionState> auctionStates = new HashMap<>();
+    private final Map<String, AuctionState> auctionStates = new ConcurrentHashMap<String, AuctionState>();
 
     public enum AuctionState {
         ROTATION,
