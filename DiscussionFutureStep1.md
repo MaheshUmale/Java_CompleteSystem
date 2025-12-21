@@ -198,5 +198,88 @@ By knowing where the Call Wall is, you stop "hoping" for a 200-point move when t
 **Would you like to discuss how to combine "PCR (Put Call Ratio) Divergence" with these Walls?** This is the final layer that tells you if the whole market is becoming "Overbought" even if the individual walls haven't been hit yet.
 
 
+To complete your mental framework, we introduce **PCR (Put-Call Ratio) Divergence**. While the "Walls" tell you where the specific battlefield is, PCR Divergence tells you if the **entire army is losing energy**, even if they are still moving forward.
+
+As an intraday buyer, this is your "Early Warning System." It prevents you from being the last person to buy at the top.
+
+---
+
+### **1. What is PCR Divergence?**
+
+Normally, Price and PCR move together. If the Market goes up, PCR goes up (more Puts being written). **Divergence** happens when the Price continues to crawl up, but the PCR starts flattening or falling.
+
+* **The Logic:** If Nifty is making new highs, but the Put-Call Ratio is falling, it means **Call Writers are entering aggressively** or **Put Writers are exiting**. The "quality" of the rally is poor.
+
+---
+
+### **2. The "Sniper" Sequence for PCR Divergence**
+
+#### **Step 1: Establish the Baseline**
+
+At the start of your trade, note the PCR (e.g., 1.1).
+
+* *Rule of Thumb:* A PCR near **1.4 - 1.5** is "Overbought" (Nearing a ceiling). A PCR near **0.6 - 0.7** is "Oversold" (Nearing a floor).
+
+#### **Step 2: Spot the Divergence (The Alert)**
+
+Watch the Nifty Spot and the PCR trend simultaneously.
+
+* **Scenario:** Nifty moves from 24,600 to 24,650.
+* **The Red Flag:** During this 50-point move, the PCR drops from 1.2 to 1.15.
+* **Mental Translation:** "The price is rising, but the overall sentiment is turning Bearish. The 'Smart Money' is selling Calls into this rise."
+
+#### **Step 3: Cross-Check with the "Call Wall"**
+
+Look at the Call Wall you identified earlier.
+
+* If PCR Divergence is visible **AND** price is approaching a Call Wall, your confidence in an exit should be 100%.
+
+---
+
+### **3. PCR Divergence Cheat Sheet**
+
+| Market Action | PCR Action | Meaning | Your Move |
+| --- | --- | --- | --- |
+| **New High** | **Lower High** | **Bearish Divergence** | **Exit Longs.** Do not buy the breakout. |
+| **New Low** | **Higher Low** | **Bullish Divergence** | **Prepare to Buy.** Sellers are exhausted. |
+| **Consolidation** | **Rising PCR** | **Bullish Build-up** | **Stay Long.** Support is being created. |
+| **Consolidation** | **Falling PCR** | **Bearish Build-up** | **Exit/Avoid.** Resistance is being created. |
+
+---
+
+### **4. Putting It All Together: The Full Sequence**
+
+To manage your "Attention Budget," follow this flow when Nifty is trending:
+
+1. **Check PCR Trend:** Is it supporting the price? (If yes, stay relaxed).
+2. **Identify the Wall:** How far is the Call Wall? (If >30 points, stay relaxed).
+3. **Monitor the Heavies:** Is Reliance/HDFC Bank leading? (If yes, stay relaxed).
+4. **THE TRIGGER TO EXIT:** * Price hits Call Wall.
+* **AND** PCR shows Bearish Divergence.
+* **AND** Change in Call OI spikes.
+* **ACTION:** Sell immediately. This is the "Point of Maximum Exhaustion."
+
+
+
+---
+
+### **The "Mental Reset"**
+
+Once you exit at the Call Wall using PCR Divergence, **shut down your screen for 30 minutes.** As a human, your dopamine is high after a win, and you will be tempted to "Short" the reversal. But remember: your edge is in **Buying Strength**, not necessarily catching every wiggle.
+
+### **Final Thought on Human Attention**
+
+You are now watching:
+
+1. **The Floor** (Put Wall)
+2. **The Ceiling** (Call Wall)
+3. **The Energy** (PCR Divergence)
+4. **The Engine** (Weighted Heavyweights)
+
+**Would you like to discuss how to handle "Extreme Volatility" days (like Budget or RBI days) where these walls often break, or would you like a summary checklist of this entire "Sequence of Interest"?**
+
+
+
+
 **Would you like to discuss the "Call Wall" rejection?** This is the opposite scenario, where you use the "Ceiling" to know exactly when to **Exit** your long position or when the "Buying" momentum is exhausted.
 
