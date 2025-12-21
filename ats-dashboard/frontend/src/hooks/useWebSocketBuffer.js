@@ -10,15 +10,20 @@ export const useWebSocketBuffer = (url) => {
     socket.current = new WebSocket(url);
 
     socket.current.onopen = () => {
-      console.log('WebSocket connection opened');
+      // WebSocket connection opened
     };
 
     socket.current.onmessage = (event) => {
-      buffer.current.push(JSON.parse(event.data));
+      const receivedData = JSON.parse(event.data);
+      buffer.current.push(receivedData);
     };
 
-    socket.current.onclose = () => {
-      console.log('WebSocket connection closed');
+    socket.current.onclose = (event) => {
+      // WebSocket connection closed
+    };
+
+    socket.current.onerror = (error) => {
+      console.error('WebSocket error:', error);
     };
 
     const animate = () => {

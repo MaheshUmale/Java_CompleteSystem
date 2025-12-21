@@ -35,7 +35,11 @@ public class Main {
         );
 
         if (dashboardEnabled) {
-            com.trading.hf.dashboard.DashboardBridge.start(volumeBarGenerator);
+            com.trading.hf.dashboard.DashboardBridge.start(
+                volumeBarGenerator,
+                signalEngine,
+                auctionProfileCalculator
+            );
         }
 
         if ("live".equalsIgnoreCase(runMode)) {
@@ -111,10 +115,26 @@ public class Main {
                 Thread.currentThread().interrupt();
             }
 
-            System.out.println("Simulation finished. Shutting down.");
-            disruptorManager.shutdown();
-            if (questDBWriter != null) questDBWriter.close();
-            System.out.println("Shutdown complete.");
+            System.out.println("Simulation finished. Server will remain active for dashboard connection.");
+
+            // Keep the main thread alive to allow the dashboard to be viewed.
+            // The shutdown hook will handle closing resources.
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                System.out.println("Shutdown hook initiated.");
+                disruptorManager.shutdown();
+                if (questDBWriter != null) questDBWriter.close();
+                System.out.println("Resources released.");
+            }));
+
+            while (true) {
+                try {
+                    Thread.sleep(10000); // Sleep indefinitely
+                } catch (InterruptedException e) {
+                    System.out.println("Main thread interrupted, shutting down.");
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            }
         }
     }
 }

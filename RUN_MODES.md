@@ -15,6 +15,7 @@ Before you begin, ensure you have the following installed and configured:
     cp ats-core/src/main/resources/config.properties.example ats-core/src/main/resources/config.properties
     ```
     *Note: This `config.properties` file is included in `.gitignore` and should not be committed to version control.*
+4.  **WebSocket Port:** The backend WebSocket server runs on port `7070`. Ensure this port is free on your machine. The frontend is pre-configured to connect to this port.
 
 ---
 

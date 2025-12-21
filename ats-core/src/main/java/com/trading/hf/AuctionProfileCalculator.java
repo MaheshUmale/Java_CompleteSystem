@@ -23,7 +23,8 @@ public class AuctionProfileCalculator {
         MarketProfile profile = profiles.get(symbol);
         if (profile != null) {
             synchronized (profile) {
-                return profile;
+                // Return a copy to ensure thread safety for the caller
+                return new MarketProfile(profile);
             }
         }
         return null;
@@ -35,6 +36,18 @@ public class AuctionProfileCalculator {
         private double vah;
         private double val;
         private long totalVolume;
+
+        // Default constructor
+        public MarketProfile() {}
+
+        // Copy constructor for thread-safe snapshots
+        public MarketProfile(MarketProfile other) {
+            this.volumeAtPrice.putAll(other.volumeAtPrice);
+            this.poc = other.poc;
+            this.vah = other.vah;
+            this.val = other.val;
+            this.totalVolume = other.totalVolume;
+        }
 
         public void addVolume(double price, long volume) {
             volumeAtPrice.put(price, volumeAtPrice.getOrDefault(price, 0L) + volume);
