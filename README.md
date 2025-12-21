@@ -90,6 +90,45 @@ The project includes a Python script to generate sample data with a predictable 
 python3 scripts/generate_data.py
 ```
 
+#### QuestDB Backtesting
+
+The application can also be configured to use QuestDB as a data source for backtesting. This is a more powerful option that allows you to replay large datasets with high performance.
+
+**1. Set up QuestDB**
+
+First, you need to have a running QuestDB instance. The easiest way to do this is with Docker:
+
+```bash
+docker run -p 9000:9000 -p 8812:8812 questdb/questdb
+```
+
+**2. Create the Table**
+
+Next, you need to create the `market_data` table in QuestDB. The schema for this table is defined in `scripts/questdb_schema.sql`. You can create the table by executing this SQL script in the QuestDB web interface, which is accessible at `http://localhost:9000`.
+
+**3. Generate and Import Data**
+
+The project includes a Python script to generate a CSV file with a full day's worth of market data. To generate the data, run the following command from the project's root directory:
+
+```bash
+python3 scripts/generate_questdb_csv.py
+```
+
+This will create a `questdb_market_data.csv` file in the `scripts` directory. You can then import this data into QuestDB using the web interface.
+
+**4. Configure the Application**
+
+Finally, you need to configure the application to use QuestDB as the data source. In your `config.properties` file, set the following properties:
+
+```properties
+replay.source=questdb
+questdb.enabled=true
+questdb.host=localhost
+questdb.port=8812
+questdb.username=admin
+questdb.password=quest
+```
+
 ### 3. Build the Application
 
 The project is built using Apache Maven. To build the executable JAR, run the following command from the project's root directory:

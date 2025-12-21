@@ -5,7 +5,11 @@ run.mode=simulation
 upstox.accessToken=YOUR_ACCESS_TOKEN_HERE
 
 # QuestDB Integration
-questdb.enabled=false
+questdb.enabled=true
+questdb.host=localhost
+questdb.port=8812
+questdb.username=admin
+questdb.password=quest
 
 # Dashboard UI
 dashboard.enabled=true
@@ -13,5 +17,5 @@ dashboard.enabled=true
 # Simulation event delay in milliseconds
 simulation.event.delay.ms=10
 
-# Replay source: "sample_data" (for now)
-replay.source=sample_data
+# Replay source: "sample_data" or "questdb"
+replay.source=questdb

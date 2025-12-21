@@ -1,43 +1,30 @@
 package com.trading.hf;
 
 import com.lmax.disruptor.EventHandler;
+import com.upstox.marketdatafeeder.rpc.proto.FeedResponse;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class ThetaExitGuard implements EventHandler<MarketEvent> {
 
-    private final PositionManager positionManager;
-    private final UpstoxOrderManager orderManager;
-    private static final double THETA_DECAY_THRESHOLD = 0.5; // Example threshold
-
-    public ThetaExitGuard(PositionManager positionManager, UpstoxOrderManager orderManager) {
-        this.positionManager = positionManager;
-        this.orderManager = orderManager;
-    }
+    private final Map<String, Double> lastLtp = new HashMap<>();
+    private final Map<String, Long> lastTimestamp = new HashMap<>();
 
     @Override
     public void onEvent(MarketEvent event, long sequence, boolean endOfBatch) {
-        positionManager.getAllPositions().forEach((instrumentKey, position) -> {
-            if (instrumentKey.equals(event.getSymbol())) {
-                double pnl = 0;
-                if (position.getSide().equals("BUY")) {
-                    pnl = (event.getLtp() - position.getEntryPrice()) * position.getQuantity();
-                } else {
-                    pnl = (position.getEntryPrice() - event.getLtp()) * position.getQuantity();
-                }
+        FeedResponse feedResponse = event.getFeedResponse();
+        feedResponse.getFeedsMap().forEach((key, feed) -> {
+            double ltp = feed.getFullFeed().getMarketFF().getLtpc().getLtp();
+            long timestamp = feed.getFullFeed().getMarketFF().getLtpc().getLtt();
+            double theta = feed.getFullFeed().getMarketFF().getOptionGreeks().getTheta();
 
-                long timeInMarket = (event.getTs() - position.getEntryTimestamp()) / 1000;
-                double thetaDecay = event.getTheta() * timeInMarket;
-
-                if (pnl + thetaDecay < -THETA_DECAY_THRESHOLD) {
-                    orderManager.placeOrder(
-                            instrumentKey,
-                            position.getQuantity(),
-                            position.getSide().equals("BUY") ? "SELL" : "BUY",
-                            "MARKET",
-                            0
-                    );
-                    positionManager.removePosition(instrumentKey);
-                }
+            if (lastLtp.containsKey(key)) {
+                // This is where you would implement the theta exit logic
             }
+
+            lastLtp.put(key, ltp);
+            lastTimestamp.put(key, timestamp);
         });
     }
 }

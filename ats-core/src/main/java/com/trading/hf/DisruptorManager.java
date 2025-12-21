@@ -1,15 +1,9 @@
 package com.trading.hf;
 
+import com.lmax.disruptor.EventHandler;
 import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.dsl.Disruptor;
-import com.lmax.disruptor.dsl.EventHandlerGroup;
-import com.lmax.disruptor.dsl.ProducerType;
-import com.lmax.disruptor.YieldingWaitStrategy;
-import java.util.concurrent.ThreadFactory;
-import java.util.ArrayList;
-import java.util.List;
-import com.lmax.disruptor.EventHandler;
-
+import com.lmax.disruptor.util.DaemonThreadFactory;
 
 public class DisruptorManager {
 
@@ -17,26 +11,18 @@ public class DisruptorManager {
     private final RingBuffer<MarketEvent> ringBuffer;
 
     @SuppressWarnings("unchecked")
-    public DisruptorManager(QuestDBWriter questDBWriter, VolumeBarGenerator volumeBarGenerator, IndexWeightCalculator indexWeightCalculator) {
-        ThreadFactory threadFactory = Thread.ofVirtual().factory();
+    public DisruptorManager(
+            EventHandler<MarketEvent>... handlers) {
+        int bufferSize = 1024;
         disruptor = new Disruptor<>(
-                MarketEvent.EVENT_FACTORY,
-                65536,
-                threadFactory,
-                ProducerType.SINGLE,
-                new YieldingWaitStrategy()
-        );
+                MarketEvent::new,
+                bufferSize,
+                DaemonThreadFactory.INSTANCE);
 
-        List<EventHandler<MarketEvent>> handlers = new ArrayList<>();
-        handlers.add(volumeBarGenerator);
-        handlers.add(indexWeightCalculator);
-        if (questDBWriter != null) {
-            handlers.add(questDBWriter);
-        }
+        disruptor.handleEventsWith(handlers);
 
-        disruptor.handleEventsWith(handlers.toArray(new EventHandler[0]));
-
-        ringBuffer = disruptor.start();
+        this.ringBuffer = disruptor.getRingBuffer();
+        disruptor.start();
     }
 
     public RingBuffer<MarketEvent> getRingBuffer() {

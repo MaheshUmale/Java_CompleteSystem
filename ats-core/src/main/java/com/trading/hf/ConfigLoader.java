@@ -4,7 +4,6 @@ import java.io.InputStream;
 import java.util.Properties;
 
 public class ConfigLoader {
-
     private static final Properties properties = new Properties();
 
     static {
@@ -24,5 +23,9 @@ public class ConfigLoader {
 
     public static String getProperty(String key, String defaultValue) {
         return properties.getProperty(key, defaultValue);
+    }
+
+    public static Properties getProperties() {
+        return properties;
     }
 }

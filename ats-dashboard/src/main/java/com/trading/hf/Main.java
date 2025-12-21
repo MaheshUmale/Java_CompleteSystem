@@ -1,5 +1,8 @@
 package com.trading.hf;
 
+import com.trading.hf.data.QuestDbDataReplayer;
+import com.trading.hf.logic.IDataReplayer;
+
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -96,7 +99,9 @@ public class Main {
                 case "sample_data":
                     replayer = new SampleDataReplayer(disruptorManager.getRingBuffer(), dataDirectory);
                     break;
-                // Add cases for other replay sources here in the future
+                case "questdb":
+                    replayer = new QuestDbDataReplayer(ConfigLoader.getProperties(), disruptorManager.getRingBuffer());
+                    break;
                 default:
                     System.err.println("FATAL: Unknown replay.source configured: " + replaySource);
                     return;
