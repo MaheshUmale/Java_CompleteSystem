@@ -2,14 +2,12 @@ package com.trading.hf;
 
 import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.dsl.Disruptor;
-import com.lmax.disruptor.dsl.EventHandlerGroup;
 import com.lmax.disruptor.dsl.ProducerType;
 import com.lmax.disruptor.YieldingWaitStrategy;
+import com.lmax.disruptor.EventHandler;
 import java.util.concurrent.ThreadFactory;
 import java.util.ArrayList;
 import java.util.List;
-import com.lmax.disruptor.EventHandler;
-
 
 public class DisruptorManager {
 
@@ -48,7 +46,7 @@ public class DisruptorManager {
 
         // Disruptor for RawFeedEvents
         rawFeedDisruptor = new Disruptor<>(
-                RawFeedEvent::new, // Assuming RawFeedEvent has a default constructor
+                RawFeedEvent::new,
                 65536,
                 threadFactory,
                 ProducerType.SINGLE,
