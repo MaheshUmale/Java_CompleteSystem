@@ -15,32 +15,22 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 
-public class SampleDataReplayer {
+public class SampleDataReplayer implements IDataReplayer {
 
     private final RingBuffer<MarketEvent> ringBuffer;
     private final String dataDirectory;
     private final Gson gson = new Gson();
+    private final long simulationEventDelayMs;
 
-    // Hardcoded list of data files for reliability
+    // Use a single, generated data file for predictable backtesting
     private final List<String> dataFiles = Arrays.asList(
-            "NSE_EQ_INE027H01010_data.json.json.gz",
-            "NSE_EQ_INE118H01025_data.json.json.gz",
-            "NSE_EQ_INE465A01025_data.json.json.gz",
-            "NSE_EQ_INE811K01011_data.json.json.gz",
-            "NSE_FO_51414_data.json.json.gz",
-            "NSE_FO_51420_data.json.json.gz",
-            "NSE_FO_51460_data.json.json.gz",
-            "NSE_FO_51461_data.json.json.gz",
-            "NSE_FO_51498_data.json.json.gz",
-            "NSE_FO_51502_data.json.json.gz",
-            "NSE_FO_51507_data.json.json.gz",
-            "NSE_FO_51510_data.json.json.gz",
-            "NSE_FO_60166_data.json.json.gz"
+            "generated_data.json.gz"
     );
 
     public SampleDataReplayer(RingBuffer<MarketEvent> ringBuffer, String dataDirectory) {
         this.ringBuffer = ringBuffer;
         this.dataDirectory = dataDirectory;
+        this.simulationEventDelayMs = Long.parseLong(ConfigLoader.getProperty("simulation.event.delay.ms", "10"));
     }
 
     public void start() {
@@ -62,6 +52,13 @@ public class SampleDataReplayer {
 
             for (Map<String, Object> data : dataList) {
                 publishMarketUpdate(data);
+                try {
+                    Thread.sleep(simulationEventDelayMs);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    System.err.println("Data replay interrupted");
+                    return;
+                }
             }
 
         } catch (Exception e) {
