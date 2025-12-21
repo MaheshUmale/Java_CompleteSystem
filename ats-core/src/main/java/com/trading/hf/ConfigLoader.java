@@ -25,4 +25,12 @@ public class ConfigLoader {
     public static String getProperty(String key, String defaultValue) {
         return properties.getProperty(key, defaultValue);
     }
+
+    public static boolean getBooleanProperty(String key, boolean defaultValue) {
+        String value = getProperty(key);
+        if (value == null) {
+            return defaultValue;
+        }
+        return Boolean.parseBoolean(value);
+    }
 }
