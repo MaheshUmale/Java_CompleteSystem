@@ -94,7 +94,7 @@ public class Main {
 
             switch (replaySource) {
                 case "sample_data":
-                    replayer = new SampleDataReplayer(disruptorManager.getRingBuffer(), dataDirectory);
+                    replayer = new MySampleDataReplayer(disruptorManager.getRingBuffer(), dataDirectory);
                     break;
                 // Add cases for other replay sources here in the future
                 default:
