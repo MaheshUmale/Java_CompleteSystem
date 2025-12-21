@@ -6,6 +6,7 @@ upstox.accessToken=YOUR_ACCESS_TOKEN_HERE
 
 # QuestDB Integration
 questdb.enabled=false
+database.persistence.enabled=false
 
 # Dashboard UI
 dashboard.enabled=true

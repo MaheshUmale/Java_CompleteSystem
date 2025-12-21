@@ -100,5 +100,9 @@ public class AuctionProfileCalculator {
         public double getVal() {
             return val;
         }
+
+        public TreeMap<Double, Long> getVolumeAtPrice() {
+            return volumeAtPrice;
+        }
     }
 }

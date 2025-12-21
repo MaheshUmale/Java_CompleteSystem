@@ -2,7 +2,7 @@ import json
 import gzip
 import os
 
-def generate_data(instrument_key="NSE_EQ_TEST", num_ticks=100, output_file="generated_data.json.gz"):
+def generate_data(instrument_key="NSE_EQ_TEST", num_ticks=10000, output_file="generated_data.json.gz"):
     """
     Generates a gzipped JSON file with sample market data.
     """

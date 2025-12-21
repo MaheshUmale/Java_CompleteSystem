@@ -16,6 +16,7 @@ public class Main {
         // --- Initialization ---
         boolean dashboardEnabled = Boolean.parseBoolean(ConfigLoader.getProperty("dashboard.enabled", "true"));
         QuestDBWriter questDBWriter = questDbEnabled ? new QuestDBWriter() : null;
+        RawFeedWriter rawFeedWriter = new RawFeedWriter();
 
         AuctionProfileCalculator auctionProfileCalculator = new AuctionProfileCalculator();
         SignalEngine signalEngine = new SignalEngine(auctionProfileCalculator);
@@ -30,6 +31,7 @@ public class Main {
 
         DisruptorManager disruptorManager = new DisruptorManager(
                 questDBWriter,
+                rawFeedWriter,
                 volumeBarGenerator,
                 indexWeightCalculator
         );
@@ -57,7 +59,8 @@ public class Main {
 
             UpstoxMarketDataStreamer marketDataStreamer = new UpstoxMarketDataStreamer(
                     accessToken,
-                    disruptorManager.getRingBuffer(),
+                    disruptorManager.getMarketEventRingBuffer(),
+                    disruptorManager.getRawFeedRingBuffer(),
                     initialInstrumentKeys
             );
 
@@ -87,6 +90,7 @@ public class Main {
                 marketDataStreamer.disconnect();
                 disruptorManager.shutdown();
                 if (questDBWriter != null) questDBWriter.close();
+                rawFeedWriter.close();
             }));
 
         } else {
@@ -98,7 +102,7 @@ public class Main {
 
             switch (replaySource) {
                 case "sample_data":
-                    replayer = new SampleDataReplayer(disruptorManager.getRingBuffer(), dataDirectory);
+                    replayer = new MySampleDataReplayer(disruptorManager.getRingBuffer(), dataDirectory);
                     break;
                 // Add cases for other replay sources here in the future
                 default:

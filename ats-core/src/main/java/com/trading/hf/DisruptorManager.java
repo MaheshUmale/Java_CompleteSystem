@@ -13,13 +13,23 @@ import com.lmax.disruptor.EventHandler;
 
 public class DisruptorManager {
 
-    private final Disruptor<MarketEvent> disruptor;
-    private final RingBuffer<MarketEvent> ringBuffer;
+    private final Disruptor<MarketEvent> marketEventDisruptor;
+    private final RingBuffer<MarketEvent> marketEventRingBuffer;
+
+    private final Disruptor<RawFeedEvent> rawFeedDisruptor;
+    private final RingBuffer<RawFeedEvent> rawFeedRingBuffer;
 
     @SuppressWarnings("unchecked")
-    public DisruptorManager(QuestDBWriter questDBWriter, VolumeBarGenerator volumeBarGenerator, IndexWeightCalculator indexWeightCalculator) {
+    public DisruptorManager(
+            QuestDBWriter questDBWriter,
+            RawFeedWriter rawFeedWriter,
+            VolumeBarGenerator volumeBarGenerator,
+            IndexWeightCalculator indexWeightCalculator
+    ) {
         ThreadFactory threadFactory = Thread.ofVirtual().factory();
-        disruptor = new Disruptor<>(
+
+        // Disruptor for processed MarketEvents
+        marketEventDisruptor = new Disruptor<>(
                 MarketEvent.EVENT_FACTORY,
                 65536,
                 threadFactory,
@@ -27,23 +37,40 @@ public class DisruptorManager {
                 new YieldingWaitStrategy()
         );
 
-        List<EventHandler<MarketEvent>> handlers = new ArrayList<>();
-        handlers.add(volumeBarGenerator);
-        handlers.add(indexWeightCalculator);
+        List<EventHandler<MarketEvent>> marketEventHandlers = new ArrayList<>();
+        marketEventHandlers.add(volumeBarGenerator);
+        marketEventHandlers.add(indexWeightCalculator);
         if (questDBWriter != null) {
-            handlers.add(questDBWriter);
+            marketEventHandlers.add(questDBWriter);
         }
+        marketEventDisruptor.handleEventsWith(marketEventHandlers.toArray(new EventHandler[0]));
+        marketEventRingBuffer = marketEventDisruptor.start();
 
-        disruptor.handleEventsWith(handlers.toArray(new EventHandler[0]));
+        // Disruptor for RawFeedEvents
+        rawFeedDisruptor = new Disruptor<>(
+                RawFeedEvent::new, // Assuming RawFeedEvent has a default constructor
+                65536,
+                threadFactory,
+                ProducerType.SINGLE,
+                new YieldingWaitStrategy()
+        );
 
-        ringBuffer = disruptor.start();
+        if (rawFeedWriter != null) {
+            rawFeedDisruptor.handleEventsWith(rawFeedWriter);
+        }
+        rawFeedRingBuffer = rawFeedDisruptor.start();
     }
 
-    public RingBuffer<MarketEvent> getRingBuffer() {
-        return ringBuffer;
+    public RingBuffer<MarketEvent> getMarketEventRingBuffer() {
+        return marketEventRingBuffer;
+    }
+
+    public RingBuffer<RawFeedEvent> getRawFeedRingBuffer() {
+        return rawFeedRingBuffer;
     }
 
     public void shutdown() {
-        disruptor.shutdown();
+        marketEventDisruptor.shutdown();
+        rawFeedDisruptor.shutdown();
     }
 }

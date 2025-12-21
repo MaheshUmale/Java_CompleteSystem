@@ -15,7 +15,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 
-public class SampleDataReplayer implements IDataReplayer {
+public class MySampleDataReplayer implements IDataReplayer {
 
     private final RingBuffer<MarketEvent> ringBuffer;
     private final String dataDirectory;
@@ -24,10 +24,9 @@ public class SampleDataReplayer implements IDataReplayer {
 
     // Use a single, generated data file for predictable backtesting
     private final List<String> dataFiles = Arrays.asList(
-            "generated_data.json.gz"
-    );
+            "NSE_EQ_INE027H01010_data.json.json.gz");
 
-    public SampleDataReplayer(RingBuffer<MarketEvent> ringBuffer, String dataDirectory) {
+    public MySampleDataReplayer(RingBuffer<MarketEvent> ringBuffer, String dataDirectory) {
         this.ringBuffer = ringBuffer;
         this.dataDirectory = dataDirectory;
         this.simulationEventDelayMs = Long.parseLong(ConfigLoader.getProperty("simulation.event.delay.ms", "10"));
@@ -46,14 +45,18 @@ public class SampleDataReplayer implements IDataReplayer {
     private void processFile(String filePath) {
         System.out.println("Processing file: " + filePath);
         try (InputStream is = getClass().getClassLoader().getResourceAsStream(filePath);
-             BufferedReader reader = new BufferedReader(new InputStreamReader(new GZIPInputStream(Objects.requireNonNull(is))))) {
+                BufferedReader reader = new BufferedReader(
+                        new InputStreamReader(new GZIPInputStream(Objects.requireNonNull(is))))) {
 
             String jsonData = reader.lines().collect(Collectors.joining());
-            Type type = new TypeToken<List<Map<String, Object>>>() {}.getType();
+            Type type = new TypeToken<List<Map<String, Object>>>() {
+            }.getType();
             List<Map<String, Object>> dataList = gson.fromJson(jsonData, type);
 
             for (Map<String, Object> data : dataList) {
-                publishMarketUpdate(data);
+                // Transform the record to the new structure
+                Map<String, Object> restructuredData = transformRecord(data);
+                publishMarketUpdate(restructuredData);
                 try {
                     Thread.sleep(simulationEventDelayMs);
                 } catch (InterruptedException e) {
@@ -85,10 +88,12 @@ public class SampleDataReplayer implements IDataReplayer {
             if (marketData == null) {
                 marketData = (Map<String, Object>) ff.get("indexFF");
             }
-            if (marketData == null) return;
+            if (marketData == null)
+                return;
 
             Map<String, Object> ltpc = (Map<String, Object>) marketData.get("ltpc");
-            if (ltpc == null) return;
+            if (ltpc == null)
+                return;
 
             double ltp = ((Number) ltpc.get("ltp")).doubleValue();
             long ltq = Long.parseLong((String) ltpc.get("ltq"));
@@ -99,11 +104,16 @@ public class SampleDataReplayer implements IDataReplayer {
             long vtt = 0;
             double bestBidPrice = 0, bestAskPrice = 0;
 
-            if (marketData.containsKey("tbq")) tbq = ((Number) marketData.get("tbq")).doubleValue();
-            if (marketData.containsKey("tsq")) tsq = ((Number) marketData.get("tsq")).doubleValue();
-            if (marketData.containsKey("atp")) atp = ((Number) marketData.get("atp")).doubleValue();
-            if (marketData.containsKey("vtt")) vtt = Long.parseLong((String) marketData.get("vtt"));
-            if (marketData.containsKey("oi")) oi = ((Number) marketData.get("oi")).doubleValue();
+            if (marketData.containsKey("tbq"))
+                tbq = ((Number) marketData.get("tbq")).doubleValue();
+            if (marketData.containsKey("tsq"))
+                tsq = ((Number) marketData.get("tsq")).doubleValue();
+            if (marketData.containsKey("atp"))
+                atp = ((Number) marketData.get("atp")).doubleValue();
+            if (marketData.containsKey("vtt"))
+                vtt = Long.parseLong((String) marketData.get("vtt"));
+            if (marketData.containsKey("oi"))
+                oi = ((Number) marketData.get("oi")).doubleValue();
 
             if (marketData.containsKey("marketLevel")) {
                 Map<String, Object> marketLevel = (Map<String, Object>) marketData.get("marketLevel");
@@ -140,4 +150,28 @@ public class SampleDataReplayer implements IDataReplayer {
             e.printStackTrace();
         }
     }
+
+    /**
+     * Converts raw flat record into the nested "feeds" structure.
+     */
+    private Map<String, Object> transformRecord(Map<String, Object> raw) {
+        String instrumentKey = (String) raw.get("instrumentKey");
+        Object fullFeed = raw.get("fullFeed");
+
+        // Inner object: contains fullFeed and requestMode
+        Map<String, Object> innerData = new java.util.HashMap<>();
+        innerData.put("fullFeed", fullFeed);
+        innerData.put("requestMode", "full_d5");
+
+        // Feeds map: instrumentKey -> innerData
+        Map<String, Object> instrumentMap = new java.util.HashMap<>();
+        instrumentMap.put(instrumentKey, innerData);
+
+        // Root map: "feeds" -> instrumentMap
+        Map<String, Object> root = new java.util.HashMap<>();
+        root.put("feeds", instrumentMap);
+
+        return root;
+    }
+
 }

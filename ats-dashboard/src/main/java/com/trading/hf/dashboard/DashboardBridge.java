@@ -4,7 +4,7 @@ import com.google.gson.Gson;
 import com.trading.hf.AuctionProfileCalculator;
 import com.trading.hf.SignalEngine;
 import com.trading.hf.VolumeBarGenerator;
-
+import com.trading.hf.VolumeBar;
 public class DashboardBridge {
     private static final Gson gson = new Gson();
 
