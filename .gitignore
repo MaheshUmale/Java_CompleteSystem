@@ -4,3 +4,8 @@ config.properties
 *.log
 *.tmp
 *.bak
+.gradle/
+bin/
+.settings
+.classpath
+.project
