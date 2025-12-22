@@ -16,6 +16,11 @@ public class DashboardService {
         app = Javalin.create(config -> {
             config.bundledPlugins.enableCors(cors -> cors.addRule(it -> it.anyHost()));
             config.staticFiles.add("/public");
+            config.bundledPlugins.enableCors(cors -> {
+                cors.addRule(it -> {
+                    it.anyHost();
+                });
+            });
         }).start(7070);
 
         app.ws("/data", ws -> {
