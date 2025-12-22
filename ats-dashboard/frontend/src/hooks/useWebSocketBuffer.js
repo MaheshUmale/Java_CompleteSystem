@@ -28,8 +28,10 @@ export const useWebSocketBuffer = (url) => {
 
     const animate = () => {
       if (buffer.current.length > 0) {
-        setData(buffer.current[buffer.current.length - 1]);
-        buffer.current = [];
+        // Process all messages in the buffer, but only render the last one.
+        const lastMessage = buffer.current[buffer.current.length - 1];
+        setData(lastMessage);
+        buffer.current = []; // Clear buffer after processing
       }
       frameId.current = requestAnimationFrame(animate);
     };

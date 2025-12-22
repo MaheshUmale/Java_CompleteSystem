@@ -1,68 +1,89 @@
-import React from 'react';
-
-const CircularProgress = ({ percentage, color }) => {
-    const radius = 50;
-    const circumference = 2 * Math.PI * radius;
-    const offset = circumference - (percentage / 100) * circumference;
-
-    return (
-        <svg className="w-24 h-24" viewBox="0 0 120 120">
-            <circle
-                className="text-gray-700"
-                strokeWidth="10"
-                stroke="currentColor"
-                fill="transparent"
-                r={radius}
-                cx="60"
-                cy="60"
-            />
-            <circle
-                className={color}
-                strokeWidth="10"
-                strokeDasharray={circumference}
-                strokeDashoffset={offset}
-                strokeLinecap="round"
-                stroke="currentColor"
-                fill="transparent"
-                r={radius}
-                cx="60"
-                cy="60"
-                transform="rotate(-90 60 60)"
-            />
-        </svg>
-    );
-};
-
+import React, { useEffect, useRef } from 'react';
+import { createChart } from 'lightweight-charts';
 
 const TradePanel = ({ data }) => {
-    const totalSeconds = 1200; // 20 minutes
-    const remainingSeconds = data?.theta_guard_sec || 0;
-    const percentage = (remainingSeconds / totalSeconds) * 100;
+  const chartContainerRef = useRef();
+  const chartRef = useRef();
+  const seriesRef = useRef();
 
-    let color = 'text-green-500';
-    if (percentage < 50) color = 'text-yellow-500';
-    if (percentage < 25) color = 'text-red-500 animate-pulse';
+  // Chart setup
+  useEffect(() => {
+    if (chartContainerRef.current) {
+      chartRef.current = createChart(chartContainerRef.current, {
+        layout: {
+          background: { color: 'transparent' },
+          textColor: '#8B949E',
+        },
+        grid: {
+          vertLines: { visible: false },
+          horzLines: { color: '#1C212E' },
+        },
+        rightPriceScale: {
+          borderColor: '#30363D',
+          scaleMargins: { top: 0.2, bottom: 0.1 },
+        },
+        timeScale: {
+          visible: false,
+        },
+        crosshair: {
+          mode: 0,
+        },
+      });
 
-    const minutes = Math.floor(remainingSeconds / 60);
-    const seconds = remainingSeconds % 60;
+      seriesRef.current = chartRef.current.addCandlestickSeries({
+        upColor: '#26A69A',
+        downColor: '#EF5350',
+        borderDownColor: '#EF5350',
+        borderUpColor: '#26A69A',
+        wickDownColor: '#EF5350',
+        wickUpColor: '#26A69A',
+      });
 
-    return (
-        <div className="bg-[#161B22] border border-[#30363D] p-4 rounded-md">
-            <h2 className="text-white font-bold mb-2">Trade Panel & Theta-Guard</h2>
-            <div className="flex flex-col items-center justify-center space-y-4">
-                <div className="relative">
-                    <CircularProgress percentage={percentage} color={color} />
-                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <span className="text-2xl font-mono font-bold">{`${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`}</span>
-                        <span className="text-xs text-gray-400">REMAINING</span>
-                    </div>
-                </div>
-                <button className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
-                    PANIC EXIT
-                </button>
-            </div>
+      chartRef.current.timeScale().fitContent();
+
+      return () => {
+        chartRef.current.remove();
+      };
+    }
+  }, []);
+
+  // Data update
+  useEffect(() => {
+    if (seriesRef.current && data?.timestamp && data?.ohlc) {
+      seriesRef.current.update({
+        time: data.timestamp / 1000,
+        ...data.ohlc
+      });
+    }
+  }, [data]);
+
+  const thetaGcr = data?.theta_gcr || 1.22;
+  const thetaColor = thetaGcr > 1 ? 'text-green-400' : 'text-red-400';
+
+
+  return (
+    <div className="bg-[#1C212E] p-4 rounded-lg shadow-lg h-full flex flex-col">
+      <div className="flex justify-between items-center">
+        <h2 className="text-xl font-bold">Trade Panel</h2>
+        <span className="text-sm text-gray-400">Strike: @ 24650 CE (Prelim)</span>
+      </div>
+      <div className="flex-grow my-2" ref={chartContainerRef} />
+      <div className="flex justify-between items-center">
+        <div className="text-sm">
+          <span className="text-gray-400">Theta-GCR: </span>
+          <span className={`font-mono font-bold ${thetaColor}`}>{thetaGcr.toFixed(2)}</span>
         </div>
-    );
+        <div className="flex space-x-2">
+          <button className="bg-green-600 hover:bg-green-500 text-white font-bold py-2 px-8 rounded-md transition-colors">
+            BUY
+          </button>
+          <button className="bg-red-600 hover:bg-red-500 text-white font-bold py-2 px-8 rounded-md transition-colors">
+            SELL
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default TradePanel;
