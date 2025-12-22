@@ -6,6 +6,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.Set;
 import java.util.Collections;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.CompletableFuture;
 
 public class DashboardService {
     private Javalin app;
@@ -47,8 +48,12 @@ public class DashboardService {
                 System.out.println("Dashboard client disconnected.");
             });
             ws.onError(ctx -> {
+                // A ClosedChannelException is expected if the client disconnects abruptly.
+                // We don't need to log it as an error.
+                if (!(ctx.error() instanceof java.nio.channels.ClosedChannelException)) {
+                    System.err.println("Dashboard client error: " + ctx.error());
+                }
                 sessions.remove(ctx);
-                System.err.println("Dashboard client error: " + ctx.error());
             });
         });
         System.out.println("Dashboard service started on port 7070.");
