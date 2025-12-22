@@ -1,30 +1,40 @@
 package com.trading.hf.dashboard;
 
+import com.google.gson.annotations.SerializedName;
 import com.trading.hf.AuctionProfileCalculator;
 import com.trading.hf.SignalEngine;
 import com.trading.hf.VolumeBar;
 
-import java.util.Collections;
 import java.util.List;
 
-// This class is a DTO (Data Transfer Object) designed to be serialized to JSON
-// for the frontend dashboard.
 public class DashboardEvent {
+    @SerializedName("timestamp")
     public long timestamp;
+    @SerializedName("spot")
     public double spot;
-    public double future; // Placeholder
-    public double weighted_delta; // Placeholder
+    @SerializedName("future")
+    public double future;
+    @SerializedName("weighted_delta")
+    public double weighted_delta;
+    @SerializedName("auction_state")
     public String auction_state;
-    public double pcr; // Placeholder
-    public int theta_guard_sec; // Placeholder
+    @SerializedName("pcr")
+    public double pcr;
+    @SerializedName("theta_guard_sec")
+    public int theta_guard_sec;
+    @SerializedName("heavyweights")
     public List<Heavyweight> heavyweights;
+    @SerializedName("option_window")
     public List<Option> option_window;
+    @SerializedName("market_profile")
     public MarketProfileData market_profile;
 
-    // Inner classes to structure the JSON correctly
     public static class Heavyweight {
+        @SerializedName("name")
         public String name;
+        @SerializedName("delta")
         public double delta;
+        @SerializedName("weight")
         public String weight;
 
         public Heavyweight(String name, double delta, String weight) {
@@ -35,9 +45,13 @@ public class DashboardEvent {
     }
 
     public static class Option {
+        @SerializedName("strike")
         public int strike;
+        @SerializedName("type")
         public String type;
+        @SerializedName("ltp")
         public double ltp;
+        @SerializedName("oi_chg")
         public double oi_chg;
 
         public Option(int strike, String type, double ltp, double oi_chg) {
@@ -49,8 +63,11 @@ public class DashboardEvent {
     }
 
     public static class MarketProfileData {
+        @SerializedName("vah")
         public double vah;
+        @SerializedName("val")
         public double val;
+        @SerializedName("poc")
         public double poc;
 
         public MarketProfileData(AuctionProfileCalculator.MarketProfile profile) {
@@ -70,7 +87,6 @@ public class DashboardEvent {
         event.pcr = 1.1; // Placeholder
         event.theta_guard_sec = 1200; // Placeholder
 
-        // Mock data for placeholders
         event.heavyweights = List.of(
             new Heavyweight("RELIANCE", 3353, "10.2%"),
             new Heavyweight("HDFC BANK", 1690, "9.1%")

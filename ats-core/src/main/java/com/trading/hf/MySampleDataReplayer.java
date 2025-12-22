@@ -34,18 +34,12 @@ public class MySampleDataReplayer implements IDataReplayer {
 
     public void start() {
         System.out.println("Starting data replay from classpath directory: " + dataDirectory);
-        while (true) {
+        for (int i = 0; i < 10; i++) {
             for (String fileName : dataFiles) {
                 processFile(dataDirectory + "/" + fileName);
             }
-            try {
-                Thread.sleep(1000); // Add a 1-second delay
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                System.err.println("Data replay interrupted");
-                return;
-            }
         }
+        System.out.println("Data replay finished.");
     }
 
     private void processFile(String filePath) {
