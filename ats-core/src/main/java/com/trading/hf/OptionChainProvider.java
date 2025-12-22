@@ -12,6 +12,7 @@ import java.util.Comparator;
 public class OptionChainProvider implements EventHandler<MarketEvent> {
 
     private final Map<String, MarketEvent> optionState = new ConcurrentHashMap<>();
+    private final Map<String, Double> previousOi = new ConcurrentHashMap<>();
     private final AtomicReference<Double> spotPrice = new AtomicReference<>(0.0);
     private static final int STRIKE_DIFFERENCE = 50;
     private static final int WINDOW_SIZE = 2; // ATM +/- 2 strikes
@@ -46,11 +47,16 @@ public class OptionChainProvider implements EventHandler<MarketEvent> {
                     int upperBound = atmStrike + (WINDOW_SIZE * STRIKE_DIFFERENCE);
 
                     if (strike >= lowerBound && strike <= upperBound) {
+                        double currentOi = event.getOi();
+                        double prevOi = previousOi.getOrDefault(event.getSymbol(), currentOi);
+                        double oiChangePercent = (prevOi == 0) ? 0 : ((currentOi - prevOi) / prevOi) * 100;
+                        previousOi.put(event.getSymbol(), currentOi);
+
                         return new OptionChainDto(
                                 strike,
                                 optionSymbol.getType(),
                                 event.getLtp(),
-                                event.getOi(),
+                                oiChangePercent,
                                 "NEUTRAL"
                         );
                     }

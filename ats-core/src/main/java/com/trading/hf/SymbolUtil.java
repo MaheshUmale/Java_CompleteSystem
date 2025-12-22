@@ -5,7 +5,7 @@ import java.util.regex.Pattern;
 
 public class SymbolUtil {
 
-    private static final Pattern OPTION_SYMBOL_PATTERN = Pattern.compile("(\\d{5})\\s(CE|PE)$");
+    private static final Pattern OPTION_SYMBOL_PATTERN = Pattern.compile("\\b(\\d{5})\\s(CE|PE)$");
 
     public static OptionSymbol parseOptionSymbol(String symbol) {
         if (symbol == null) {

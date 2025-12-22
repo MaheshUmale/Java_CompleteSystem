@@ -3,14 +3,20 @@ package com.trading.hf;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 public class DynamicStrikeSubscriber {
 
     private final Consumer<Set<String>> subscriptionUpdateConsumer;
+    private final InstrumentMaster instrumentMaster;
     private int currentATM = 0;
 
-    public DynamicStrikeSubscriber(Consumer<Set<String>> subscriptionUpdateConsumer) {
+    public DynamicStrikeSubscriber(
+            Consumer<Set<String>> subscriptionUpdateConsumer,
+            InstrumentMaster instrumentMaster
+    ) {
         this.subscriptionUpdateConsumer = subscriptionUpdateConsumer;
+        this.instrumentMaster = instrumentMaster;
     }
 
     public void onNiftySpotPrice(double spotPrice) {
@@ -24,15 +30,13 @@ public class DynamicStrikeSubscriber {
     private void updateSubscriptions() {
         Set<String> newSubscriptions = new HashSet<>();
         for (int i = -2; i <= 2; i++) {
-            newSubscriptions.add(generateInstrumentKey("NFO", "NIFTY", currentATM + (i * 50), "CE"));
-            newSubscriptions.add(generateInstrumentKey("NFO", "NIFTY", currentATM + (i * 50), "PE"));
+            int strike = currentATM + (i * 50);
+            instrumentMaster.findInstrumentKey(strike, "CE").ifPresent(newSubscriptions::add);
+            instrumentMaster.findInstrumentKey(strike, "PE").ifPresent(newSubscriptions::add);
         }
-        subscriptionUpdateConsumer.accept(newSubscriptions);
-    }
 
-    private String generateInstrumentKey(String segment, String underlying, int strike, String optionType) {
-        // This is a simplified key generation logic. The actual key format will depend
-        // on the specific requirements of the Upstox API.
-        return String.format("%s:%s:%d:%s", segment, underlying, strike, optionType);
+        if (!newSubscriptions.isEmpty()) {
+            subscriptionUpdateConsumer.accept(newSubscriptions);
+        }
     }
 }
