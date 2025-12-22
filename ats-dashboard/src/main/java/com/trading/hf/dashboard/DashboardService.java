@@ -17,17 +17,13 @@ public class DashboardService {
         app = Javalin.create(config -> {
             config.bundledPlugins.enableCors(cors -> cors.addRule(it -> it.anyHost()));
             config.staticFiles.add("/public");
-            config.bundledPlugins.enableCors(cors -> {
-                cors.addRule(it -> {
-                    it.anyHost();
-                });
-            });
         }).start(7070);
 
         app.ws("/data", ws -> {
             ws.onConnect(ctx -> {
                 sessions.add(ctx);
                 System.out.println("Dashboard client connected.");
+                ctx.enableAutomaticPings(); // Keep the connection alive
                 // Use a CompletableFuture to send the initial message shortly after connection,
                 // avoiding a race condition where the message is sent before the handshake is fully complete.
                 CompletableFuture.runAsync(() -> {
