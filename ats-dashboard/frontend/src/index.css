@@ -1,3 +1,18 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+body {
+  font-family: 'Inter', sans-serif;
+}
+
+/* Luminance Principle: Active Signals */
+.signal-buy {
+  box-shadow: 0 0 10px #00FF41;
+}
+
+.signal-sell {
+  box-shadow: 0 0 10px #FF3131;
+}
