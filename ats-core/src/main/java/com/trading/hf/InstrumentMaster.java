@@ -2,6 +2,7 @@ package com.trading.hf;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import com.google.gson.annotations.SerializedName;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.reflect.Type;
@@ -12,10 +13,12 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Comparator;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class InstrumentMaster {
 
-    private final Map<Integer, Map<String, InstrumentDefinition>> instrumentMap = new ConcurrentHashMap<>();
+    private final Map<String, List<InstrumentDefinition>> underlyingMap = new ConcurrentHashMap<>();
+    private final Map<String, String> tradingSymbolToInstrumentKeyMap = new ConcurrentHashMap<>();
     private final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
     public InstrumentMaster(String resourcePath) {
@@ -32,43 +35,76 @@ public class InstrumentMaster {
             }
             List<InstrumentDefinition> instruments = gson.fromJson(new InputStreamReader(is), listType);
             for (InstrumentDefinition instrument : instruments) {
-                instrumentMap
-                        .computeIfAbsent(instrument.getStrikePrice(), k -> new ConcurrentHashMap<>())
-                        .put(instrument.getOptionType(), instrument);
+                if (instrument.getUnderlyingKey() != null) {
+                    underlyingMap
+                            .computeIfAbsent(instrument.getUnderlyingKey(), k -> new java.util.ArrayList<>())
+                            .add(instrument);
+                }
+                if (instrument.getTradingSymbol() != null && instrument.getOptionType() == null) {
+                    tradingSymbolToInstrumentKeyMap.put(instrument.getTradingSymbol(), instrument.getInstrumentKey());
+                }
             }
         } catch (Exception e) {
             throw new RuntimeException("Failed to load instrument master", e);
         }
     }
 
-    public Optional<String> findInstrumentKey(int strike, String optionType) {
-        // For simplicity, we'll find the first available instrument for the nearest expiry.
-        // A real implementation would need more sophisticated expiry management.
-        return Optional.ofNullable(instrumentMap.get(strike))
-                .map(expiryMap -> expiryMap.get(optionType))
-                .map(InstrumentDefinition::getInstrumentKey);
+    public Optional<String> findInstrumentKey(String underlying, int strike, String optionType, LocalDate expiry) {
+        return underlyingMap.getOrDefault(underlying, List.of()).stream()
+                .filter(inst -> inst.getStrikePrice() == strike)
+                .filter(inst -> inst.getOptionType() != null && inst.getOptionType().equalsIgnoreCase(optionType))
+                .filter(inst -> inst.getExpiry().isEqual(expiry))
+                .map(InstrumentDefinition::getInstrumentKey)
+                .findFirst();
     }
 
+    public Optional<String> findInstrumentKeyForEquity(String tradingSymbol) {
+        return Optional.ofNullable(tradingSymbolToInstrumentKeyMap.get(tradingSymbol));
+    }
+
+    public Optional<LocalDate> findNearestExpiry(String underlying, LocalDate date) {
+        return underlyingMap.getOrDefault(underlying, List.of()).stream()
+                .map(InstrumentDefinition::getExpiry)
+                .filter(expiry -> expiry != null && !expiry.isBefore(date))
+                .min(Comparator.naturalOrder());
+    }
+
+
     public static class InstrumentDefinition {
-        private String instrument_key;
-        private int strike_price;
-        private String option_type;
+        @SerializedName("instrument_key")
+        private String instrumentKey;
+        @SerializedName("underlying_key")
+        private String underlyingKey;
+        @SerializedName("tradingsymbol")
+        private String tradingSymbol;
+        @SerializedName("strike_price")
+        private Integer strikePrice;
+        @SerializedName("option_type")
+        private String optionType;
         private String expiry;
 
         public String getInstrumentKey() {
-            return instrument_key;
+            return instrumentKey;
+        }
+
+        public String getUnderlyingKey() {
+            return underlyingKey;
+        }
+
+        public String getTradingSymbol() {
+            return tradingSymbol;
         }
 
         public int getStrikePrice() {
-            return strike_price;
+            return strikePrice == null ? 0 : strikePrice;
         }
 
         public String getOptionType() {
-            return option_type;
+            return optionType;
         }
 
         public LocalDate getExpiry() {
-            return LocalDate.parse(expiry);
+            return expiry == null ? null : LocalDate.parse(expiry, DateTimeFormatter.ISO_LOCAL_DATE);
         }
     }
 }
