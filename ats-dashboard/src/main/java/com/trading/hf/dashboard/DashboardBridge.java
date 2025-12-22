@@ -7,14 +7,21 @@ import com.trading.hf.VolumeBarGenerator;
 import com.trading.hf.VolumeBar;
 public class DashboardBridge {
     private static final Gson gson = new Gson();
+    private static DashboardService dashboardService = null;
+    private static final Object lock = new Object();
 
     public static void start(
             VolumeBarGenerator volumeBarGenerator,
             SignalEngine signalEngine,
             AuctionProfileCalculator auctionProfileCalculator
     ) {
-        DashboardService dashboardService = new DashboardService();
-        dashboardService.start();
+        synchronized (lock) {
+            if (dashboardService == null) {
+                dashboardService = new DashboardService();
+                dashboardService.start();
+                Runtime.getRuntime().addShutdownHook(new Thread(dashboardService::stop));
+            }
+        }
 
         volumeBarGenerator.setDashboardConsumer(volumeBar -> {
             // Get the latest state and profile for the symbol
@@ -26,9 +33,9 @@ public class DashboardBridge {
 
             // Serialize and broadcast
             String json = gson.toJson(event);
-            dashboardService.broadcast(json);
+            if (dashboardService != null) {
+                dashboardService.broadcast(json);
+            }
         });
-
-        Runtime.getRuntime().addShutdownHook(new Thread(dashboardService::stop));
     }
 }
