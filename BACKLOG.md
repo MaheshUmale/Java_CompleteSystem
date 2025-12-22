@@ -4,35 +4,35 @@ This document outlines the remaining features, enhancements, and bug fixes requi
 
 ---
 
-## Phase 1: Core Trading Logic Implementation (The "Brain")
+~~## Phase 1: Core Trading Logic Implementation (The "Brain")~~
 
-### 1.1. Implement Auction Profile Calculator
-- **File:** `ats-core/src/main/java/com/trading/hf/AuctionProfileCalculator.java`
-- **Task:** Implement the logic to calculate the Value Area (VA) and Point of Control (POC) based on the 70% volume distribution rule. The current implementation is a placeholder.
+~~### 1.1. Implement Auction Profile Calculator~~
+~~- **File:** `ats-core/src/main/java/com/trading/hf/AuctionProfileCalculator.java`~~
+~~- **Task:** Implement the logic to calculate the Value Area (VA) and Point of Control (POC) based on the 70% volume distribution rule. The current implementation is a placeholder.~~
 
-### 1.2. Implement Signal Engine
-- **File:** `ats-core/src/main/java/com/trading/hf/SignalEngine.java`
-- **Task:** Implement the logic to generate trading signals (e.g., "INITIATIVE_BUY", "REJECTION") based on price breaking out of the value area with high delta. The current implementation returns a static "ROTATION" state.
+~~### 1.2. Implement Signal Engine~~
+~~- **File:** `ats-core/src/main/java/com/trading/hf/SignalEngine.java`~~
+~~- **Task:** Implement the logic to generate trading signals (e.g., "INITIATIVE_BUY", "REJECTION") based on price breaking out of the value area with high delta. The current implementation returns a static "ROTATION" state.~~
 
-### 1.3. Implement Option Chain "Change in OI" Monitor
-- **File:** `ats-core/src/main/java/com/trading/hf/OptionChainProvider.java`
-- **Task:** Implement the logic to track the rate of change in Open Interest (OI) for ATM strikes. The `oi_change_pct` is currently a placeholder.
+~~### 1.3. Implement Option Chain "Change in OI" Monitor~~
+~~- **File:** `ats-core/src/main/java/com/trading/hf/OptionChainProvider.java`~~
+~~- **Task:** Implement the logic to track the rate of change in Open Interest (OI) for ATM strikes. The `oi_change_pct` is currently a placeholder.~~
 
-### 1.4. Implement Theta-Exit Guard
-- **File:** `ats-core/src/main/java/com/trading/hf/ThetaExitGuard.java`
-- **Task:** Implement the logic to kill trades if the price velocity does not outpace time decay. The `thetaGuard` value in `DashboardBridge` is currently a placeholder.
+~~### 1.4. Implement Theta-Exit Guard~~
+~~- **File:** `ats-core/src/main/java/com/trading/hf/ThetaExitGuard.java`~~
+~~- **Task:** Implement the logic to kill trades if the price velocity does not outpace time decay. The `thetaGuard` value in `DashboardBridge` is currently a placeholder.~~
 
 ---
 
-## Phase 2: Order Execution and Management
+~~## Phase 2: Order Execution and Management~~
 
-### 2.1. Implement Order Execution
-- **File:** `ats-core/src/main/java/com/trading/hf/UpstoxOrderManager.java`
-- **Task:** Implement the logic to convert a `SignalEvent` into a `LimitOrder` and send it to the Upstox API.
+~~### 2.1. Implement Order Execution~~
+~~- **File:** `ats-core/src/main/java/com/trading/hf/UpstoxOrderManager.java`~~
+~~- **Task:** Implement the logic to convert a `SignalEvent` into a `LimitOrder` and send it to the Upstox API.~~
 
-### 2.2. Implement Order Modification and Cancellation
-- **File:** `ats-core/src/main/java/com/trading/hf/UpstoxOrderManager.java`
-- **Task:** Implement the `modifyOrder` and `cancelOrder` methods.
+~~### 2.2. Implement Order Modification and Cancellation~~
+~~- **File:** `ats-core/src/main/java/com/trading/hf/UpstoxOrderManager.java`~~
+~~- **Task:** Implement the `modifyOrder` and `cancelOrder` methods.~~
 
 ---
 
@@ -68,11 +68,11 @@ This document outlines the remaining features, enhancements, and bug fixes requi
 
 ---
 
-## Phase 5: Backtesting and Performance
+~~## Phase 5: Backtesting and Performance~~
 
-### 5.1. Resolve Backtesting Environment Issue
-- **File:** `ats-core/src/main/java/com/trading/hf/MarketDataReplayer.java`
-- **Task:** Fix the `PSQLException: ERROR: Invalid column: ts` issue when querying QuestDB.
+~~### 5.1. Resolve Backtesting Environment Issue~~
+~~- **File:** `ats-core/src/main/java/com/trading/hf/MarketDataReplayer.java`~~
+~~- **Task:** Fix the `PSQLException: ERROR: Invalid column: ts` issue when querying QuestDB.~~
 
-### 5.2. Performance Tuning
-- **Task:** Profile the application to identify and optimize performance bottlenecks.
+~~### 5.2. Performance Tuning~~
+~~- **Task:** Profile the application to identify and optimize performance bottlenecks.~~
