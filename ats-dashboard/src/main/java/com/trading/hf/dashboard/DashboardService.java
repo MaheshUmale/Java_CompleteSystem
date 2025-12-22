@@ -14,6 +14,7 @@ public class DashboardService {
 
     public void start() {
         app = Javalin.create(config -> {
+            config.bundledPlugins.enableCors(cors -> cors.addRule(it -> it.anyHost()));
             config.staticFiles.add("/public");
         }).start(7070);
 
@@ -21,14 +22,20 @@ public class DashboardService {
             ws.onConnect(ctx -> {
                 sessions.add(ctx);
                 System.out.println("Dashboard client connected.");
-                // Immediately send the last known message to the new client
-                if (lastMessage.get() != null) {
+                // Use a CompletableFuture to send the initial message shortly after connection,
+                // avoiding a race condition where the message is sent before the handshake is fully complete.
+                CompletableFuture.runAsync(() -> {
                     try {
-                        ctx.send(lastMessage.get());
+                        // A small delay to ensure the client-side is ready
+                        Thread.sleep(100);
+                        if (ctx.session.isOpen() && lastMessage.get() != null) {
+                            ctx.send(lastMessage.get());
+                        }
                     } catch (Exception e) {
-                        System.err.println("Failed to send last message to newly connected client: " + e.getMessage());
+                        // This can happen if the client disconnects before the message is sent, which is safe to ignore.
+                        System.err.println("Could not send initial message to client: " + e.getMessage());
                     }
-                }
+                });
             });
             ws.onClose(ctx -> {
                 sessions.remove(ctx);
