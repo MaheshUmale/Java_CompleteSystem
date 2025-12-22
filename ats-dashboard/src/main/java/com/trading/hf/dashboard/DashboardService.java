@@ -7,6 +7,7 @@ import java.util.Set;
 import java.util.Collections;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 public class DashboardService {
     private Javalin app;
@@ -14,69 +15,75 @@ public class DashboardService {
     private final AtomicReference<String> lastMessage = new AtomicReference<>();
 
     public void start() {
-        app = Javalin.create(config -> {
-            config.bundledPlugins.enableCors(cors -> cors.addRule(it -> it.anyHost()));
-            config.staticFiles.add("/public");
+        if (app != null) return;
+
+        this.app = Javalin.create(config -> {
+            // FIX 1: ONE block for CORS. Multiple blocks cause a "PluginAlreadyRegisteredException"
             config.bundledPlugins.enableCors(cors -> {
                 cors.addRule(it -> {
-                    it.anyHost();
+                    it.anyHost(); // Allows React (localhost:5173) to connect to Java (7070)
                 });
             });
+
+            // FIX 2: Stable Javalin 6 Jetty config to allow larger market data
+            config.jetty.modifyWebSocketServletFactory(factory -> {
+                factory.setMaxTextMessageSize(1024 * 1024); // 1MB
+            });
+
+            config.staticFiles.add("/public");
         }).start(7070);
 
         app.ws("/data", ws -> {
             ws.onConnect(ctx -> {
                 sessions.add(ctx);
-                System.out.println("Dashboard client connected.");
-                // Use a CompletableFuture to send the initial message shortly after connection,
-                // avoiding a race condition where the message is sent before the handshake is fully complete.
-                CompletableFuture.runAsync(() -> {
-                    try {
-                        // A small delay to ensure the client-side is ready
-                        Thread.sleep(100);
-                        if (ctx.session.isOpen() && lastMessage.get() != null) {
-                            ctx.send(lastMessage.get());
-                        }
-                    } catch (Exception e) {
-                        // This can happen if the client disconnects before the message is sent, which is safe to ignore.
-                        System.err.println("Could not send initial message to client: " + e.getMessage());
+                System.out.println("Browser Connected: " + ctx.sessionId());
+                
+                // Initial send with a safety delay
+                CompletableFuture.delayedExecutor(300, TimeUnit.MILLISECONDS).execute(() -> {
+                    String data = lastMessage.get();
+                    if (data != null && ctx.session.isOpen()) {
+                        try {
+                            ctx.send(data);
+                        } catch (Exception ignored) {}
                     }
                 });
             });
+
             ws.onClose(ctx -> {
                 sessions.remove(ctx);
-                System.out.println("Dashboard client disconnected.");
+                System.out.println("Browser Disconnected (Code: " + ctx.status() + ")");
             });
+
             ws.onError(ctx -> {
-                // A ClosedChannelException is expected if the client disconnects abruptly.
-                // We don't need to log it as an error.
-                if (!(ctx.error() instanceof java.nio.channels.ClosedChannelException)) {
-                    System.err.println("Dashboard client error: " + ctx.error());
-                }
                 sessions.remove(ctx);
+                // Suppress ClosedChannelException to keep logs clean
+                if (!(ctx.error() instanceof java.io.IOException)) {
+                    System.err.println("WS Error: " + ctx.error().getMessage());
+                }
             });
         });
-        System.out.println("Dashboard service started on port 7070.");
+        
+        System.out.println("Dashboard WSS Bridge listening on ws://localhost:7070/data");
+    }
+
+    public void broadcast(String message) {
+        lastMessage.set(message);
+        sessions.removeIf(s -> !s.session.isOpen());
+        for (WsContext session : sessions) {
+            try {
+                if (session.session.isOpen()) {
+                    session.send(message);
+                }
+            } catch (Exception e) {
+                // Channel already dead
+            }
+        }
     }
 
     public void stop() {
         if (app != null) {
             app.stop();
+            app = null;
         }
-    }
-
-    public void broadcast(String message) {
-        lastMessage.set(message); // Cache the latest message
-        sessions.forEach(session -> {
-            if (session.session.isOpen()) {
-                try {
-                    session.send(message);
-                } catch (Exception e) {
-                    System.err.println("Failed to send message to client, removing session: " + e.getMessage());
-                    // Optionally remove the session here if an error occurs
-                    // sessions.remove(session);
-                }
-            }
-        });
     }
 }
