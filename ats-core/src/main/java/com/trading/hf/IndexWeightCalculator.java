@@ -41,6 +41,10 @@ public class IndexWeightCalculator implements EventHandler<MarketEvent> {
         return heavyweights;
     }
 
+    public java.util.Set<String> getInstrumentKeys() {
+        return heavyweights.keySet();
+    }
+
     private Map<String, Heavyweight> loadWeights(String path) {
         try (InputStream is = getClass().getClassLoader().getResourceAsStream(path)) {
             if (is == null) {
