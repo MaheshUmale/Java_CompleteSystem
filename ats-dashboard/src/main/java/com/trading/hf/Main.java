@@ -61,6 +61,8 @@ public class Main {
             Set<String> initialInstrumentKeys = new HashSet<>();
             initialInstrumentKeys.add("NSE_INDEX|Nifty 50");
             initialInstrumentKeys.add("NSE_INDEX|Nifty Bank");
+            initialInstrumentKeys.add("NSE_FO|FUTIDX NIFTY 30MAY24"); // Near-month Nifty Future
+            initialInstrumentKeys.addAll(indexWeightCalculator.getInstrumentKeys());
 
             UpstoxMarketDataStreamer marketDataStreamer = new UpstoxMarketDataStreamer(
                     accessToken,
