@@ -22,6 +22,7 @@ public class Main {
         SignalEngine signalEngine = new SignalEngine(auctionProfileCalculator);
         IndexWeightCalculator indexWeightCalculator = new IndexWeightCalculator("IndexWeights.json");
         OptionChainProvider optionChainProvider = new OptionChainProvider();
+        InstrumentMaster instrumentMaster = new InstrumentMaster("instrument-master.json");
 
         VolumeBarGenerator volumeBarGenerator = new VolumeBarGenerator(volumeThreshold, bar -> {
             auctionProfileCalculator.onVolumeBar(bar);
@@ -85,7 +86,7 @@ public class Main {
                     marketDataStreamer.unsubscribe(toUnsubscribe);
                     System.out.println("Unsubscribing from: " + toUnsubscribe);
                 }
-            });
+            }, instrumentMaster);
 
             marketDataStreamer.setStrikeSubscriber(strikeSubscriber);
             marketDataStreamer.connect();
