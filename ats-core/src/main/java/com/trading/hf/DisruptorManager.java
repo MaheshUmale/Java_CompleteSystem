@@ -22,7 +22,8 @@ public class DisruptorManager {
             QuestDBWriter questDBWriter,
             RawFeedWriter rawFeedWriter,
             VolumeBarGenerator volumeBarGenerator,
-            IndexWeightCalculator indexWeightCalculator
+            IndexWeightCalculator indexWeightCalculator,
+            OptionChainProvider optionChainProvider
     ) {
         ThreadFactory threadFactory = Thread.ofVirtual().factory();
 
@@ -38,6 +39,7 @@ public class DisruptorManager {
         List<EventHandler<MarketEvent>> marketEventHandlers = new ArrayList<>();
         marketEventHandlers.add(volumeBarGenerator);
         marketEventHandlers.add(indexWeightCalculator);
+        marketEventHandlers.add(optionChainProvider);
         if (questDBWriter != null) {
             marketEventHandlers.add(questDBWriter);
         }

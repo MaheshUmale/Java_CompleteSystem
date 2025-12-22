@@ -20,6 +20,9 @@ public class Main {
 
         AuctionProfileCalculator auctionProfileCalculator = new AuctionProfileCalculator();
         SignalEngine signalEngine = new SignalEngine(auctionProfileCalculator);
+        IndexWeightCalculator indexWeightCalculator = new IndexWeightCalculator("IndexWeights.json");
+        OptionChainProvider optionChainProvider = new OptionChainProvider();
+        InstrumentMaster instrumentMaster = new InstrumentMaster("instrument-master.json");
 
         VolumeBarGenerator volumeBarGenerator = new VolumeBarGenerator(volumeThreshold, bar -> {
             auctionProfileCalculator.onVolumeBar(bar);
@@ -27,20 +30,22 @@ public class Main {
             System.out.println(String.format("New Volume Bar: %s | O: %.2f H: %.2f L: %.2f C: %.2f V: %d",
                     bar.getSymbol(), bar.getOpen(), bar.getHigh(), bar.getLow(), bar.getClose(), bar.getVolume()));
         });
-        IndexWeightCalculator indexWeightCalculator = new IndexWeightCalculator("IndexWeights.json");
 
         DisruptorManager disruptorManager = new DisruptorManager(
                 questDBWriter,
                 rawFeedWriter,
                 volumeBarGenerator,
-                indexWeightCalculator
+                indexWeightCalculator,
+                optionChainProvider
         );
 
         if (dashboardEnabled) {
             com.trading.hf.dashboard.DashboardBridge.start(
                 volumeBarGenerator,
                 signalEngine,
-                auctionProfileCalculator
+                auctionProfileCalculator,
+                indexWeightCalculator,
+                optionChainProvider
             );
         }
 
@@ -56,6 +61,8 @@ public class Main {
             Set<String> initialInstrumentKeys = new HashSet<>();
             initialInstrumentKeys.add("NSE_INDEX|Nifty 50");
             initialInstrumentKeys.add("NSE_INDEX|Nifty Bank");
+            initialInstrumentKeys.add("NSE_FO|FUTIDX NIFTY 30MAY24"); // Near-month Nifty Future
+            initialInstrumentKeys.addAll(indexWeightCalculator.getInstrumentKeys());
 
             UpstoxMarketDataStreamer marketDataStreamer = new UpstoxMarketDataStreamer(
                     accessToken,
@@ -81,7 +88,7 @@ public class Main {
                     marketDataStreamer.unsubscribe(toUnsubscribe);
                     System.out.println("Unsubscribing from: " + toUnsubscribe);
                 }
-            });
+            }, instrumentMaster);
 
             marketDataStreamer.setStrikeSubscriber(strikeSubscriber);
             marketDataStreamer.connect();
