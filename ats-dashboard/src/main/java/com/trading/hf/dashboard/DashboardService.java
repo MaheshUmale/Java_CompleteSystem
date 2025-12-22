@@ -35,6 +35,7 @@ public class DashboardService {
 
         app.ws("/data", ws -> {
             ws.onConnect(ctx -> {
+                ctx.enableAutomaticPings();
                 sessions.add(ctx);
                 System.out.println("Browser Connected: " + ctx.sessionId());
                 
