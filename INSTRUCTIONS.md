@@ -270,3 +270,310 @@ Here is the absolute minimum JSON structure required for the application to proc
   }
 }
 ```
+
+### Complete JSON example 
+
+```json
+
+{
+	"feeds": {
+		"NSE_INDEX|Nifty Bank": {
+			"fullFeed": {
+				"indexFF": {
+					"ltpc": {
+						"ltp": 59776.15,
+						"ltt": "1764226006000",
+						"cp": 59528.05
+					},
+					"marketOHLC": {
+						"ohlc": [
+							{
+								"interval": "1d",
+								"open": 59605.3,
+								"high": 59866.6,
+								"low": 59549.45,
+								"close": 59776.15,
+								"ts": "1764181800000"
+							},
+							{
+								"interval": "I1",
+								"open": 59758.2,
+								"high": 59774.85,
+								"low": 59756.8,
+								"close": 59769.9,
+								"ts": "1764225900000"
+							}
+						]
+					}
+				}
+			},
+			"requestMode": "full_d5"
+		},
+		"NSE_INDEX|Nifty 50": {
+			"fullFeed": {
+				"indexFF": {
+					"ltpc": {
+						"ltp": 26244.1,
+						"ltt": "1764226006000",
+						"cp": 26205.3
+					},
+					"marketOHLC": {
+						"ohlc": [
+							{
+								"interval": "1d",
+								"open": 26261.25,
+								"high": 26310.45,
+								"low": 26208.9,
+								"close": 26244.1,
+								"ts": "1764181800000"
+							},
+							{
+								"interval": "I1",
+								"open": 26245,
+								"high": 26247.7,
+								"low": 26243.35,
+								"close": 26245.35,
+								"ts": "1764225900000"
+							}
+						]
+					}
+				}
+			},
+			"requestMode": "full_d5"
+		},
+		"NSE_EQ|INE467B01029": {
+			"fullFeed": {
+				"marketFF": {
+					"ltpc": {
+						"ltp": 3145.3,
+						"ltt": "1764226004253",
+						"ltq": "1",
+						"cp": 3162.9
+					},
+					"marketLevel": {
+						"bidAskQuote": [
+							{
+								"bidQ": "26",
+								"bidP": 3144.5,
+								"askQ": "35",
+								"askP": 3145.3
+							},
+							{
+								"bidQ": "17",
+								"bidP": 3144.4,
+								"askQ": "36",
+								"askP": 3145.7
+							},
+							{
+								"bidQ": "45",
+								"bidP": 3144.3,
+								"askQ": "58",
+								"askP": 3145.8
+							},
+							{
+								"bidQ": "153",
+								"bidP": 3144.2,
+								"askQ": "38",
+								"askP": 3145.9
+							},
+							{
+								"bidQ": "239",
+								"bidP": 3144.1,
+								"askQ": "97",
+								"askP": 3146
+							}
+						]
+					},
+					"optionGreeks": {},
+					"marketOHLC": {
+						"ohlc": [
+							{
+								"interval": "1d",
+								"open": 3180,
+								"high": 3180,
+								"low": 3144,
+								"close": 3145.3,
+								"vol": "1092756",
+								"ts": "1764181800000"
+							},
+							{
+								"interval": "I1",
+								"open": 3145.7,
+								"high": 3145.7,
+								"low": 3144.7,
+								"close": 3145.3,
+								"vol": "2793",
+								"ts": "1764225900000"
+							}
+						]
+					},
+					"atp": 3158.71,
+					"vtt": "1092756",
+					"tbq": 116408,
+					"tsq": 260313
+				}
+			},
+			"requestMode": "full_d5"
+		},
+		"NSE_EQ|INE020B01018": {
+			"fullFeed": {
+				"marketFF": {
+					"ltpc": {
+						"ltp": 361.8,
+						"ltt": "1764226006640",
+						"ltq": "1",
+						"cp": 356.4
+					},
+					"marketLevel": {
+						"bidAskQuote": [
+							{
+								"bidQ": "25",
+								"bidP": 361.7,
+								"askQ": "432",
+								"askP": 361.8
+							},
+							{
+								"bidQ": "846",
+								"bidP": 361.65,
+								"askQ": "1738",
+								"askP": 361.85
+							},
+							{
+								"bidQ": "1340",
+								"bidP": 361.6,
+								"askQ": "594",
+								"askP": 361.9
+							},
+							{
+								"bidQ": "3321",
+								"bidP": 361.55,
+								"askQ": "5399",
+								"askP": 361.95
+							},
+							{
+								"bidQ": "4282",
+								"bidP": 361.5,
+								"askQ": "2100",
+								"askP": 362
+							}
+						]
+					},
+					"optionGreeks": {},
+					"marketOHLC": {
+						"ohlc": [
+							{
+								"interval": "1d",
+								"open": 356.4,
+								"high": 362.9,
+								"low": 356,
+								"close": 361.8,
+								"vol": "2422294",
+								"ts": "1764181800000"
+							},
+							{
+								"interval": "I1",
+								"open": 361.7,
+								"high": 361.7,
+								"low": 361.65,
+								"close": 361.7,
+								"vol": "2677",
+								"ts": "1764225900000"
+							}
+						]
+					},
+					"atp": 360.94,
+					"vtt": "2422294",
+					"tbq": 849870,
+					"tsq": 863503
+				}
+			},
+			"requestMode": "full_d5"
+		},
+		"NSE_FO|46803": {
+			"fullFeed": {
+				"marketFF": {
+					"ltpc": {
+						"ltp": 116.7,
+						"ltt": "1764229716810",
+						"ltq": "75",
+						"cp": 146.4
+					},
+					"marketLevel": {
+						"bidAskQuote": [
+							{
+								"bidQ": "975",
+								"bidP": 116.4,
+								"askQ": "675",
+								"askP": 116.6
+							},
+							{
+								"bidQ": "2175",
+								"bidP": 116.35,
+								"askQ": "750",
+								"askP": 116.65
+							},
+							{
+								"bidQ": "2100",
+								"bidP": 116.3,
+								"askQ": "2475",
+								"askP": 116.7
+							},
+							{
+								"bidQ": "2100",
+								"bidP": 116.25,
+								"askQ": "2100",
+								"askP": 116.75
+							},
+							{
+								"bidQ": "1875",
+								"bidP": 116.2,
+								"askQ": "4125",
+								"askP": 116.8
+							}
+						]
+					},
+					"optionGreeks": {
+						"delta": 0.5202,
+						"theta": -10.7668,
+						"gamma": 0.0014,
+						"vega": 12.3347,
+						"rho": 1.8859
+					},
+					"marketOHLC": {
+						"ohlc": [
+							{
+								"interval": "1d",
+								"open": 170,
+								"high": 208.3,
+								"low": 106.85,
+								"close": 116.7,
+								"vol": "125945775",
+								"ts": "1764181800000"
+							},
+							{
+								"interval": "I1",
+								"open": 113.4,
+								"high": 116.2,
+								"low": 113.3,
+								"close": 115.75,
+								"vol": "1166700",
+								"ts": "1764229620000"
+							}
+						]
+					},
+					"atp": 166.8,
+					"vtt": "125958375",
+					"oi": 10136475,
+					"iv": 0.0888824462890625,
+					"tbq": 3282300,
+					"tsq": 1550550
+				}
+			},
+			"requestMode": "full_d5"
+		}
+	},
+	"currentTs": "1764226006839"
+}
+```
+
+
