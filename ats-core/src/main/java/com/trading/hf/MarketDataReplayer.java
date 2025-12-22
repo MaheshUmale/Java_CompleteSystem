@@ -16,7 +16,7 @@ public class MarketDataReplayer {
     }
 
     public void replay(String symbol, Instant startTime, Instant endTime) {
-        String query = "SELECT * FROM ticks WHERE symbol = ? AND ts BETWEEN ? AND ? ORDER BY ts ASC";
+        String query = "SELECT * FROM ticks WHERE symbol = ? AND timestamp BETWEEN ? AND ? ORDER BY timestamp ASC";
 
         try (Connection conn = DriverManager.getConnection(questdbConnectionString);
              PreparedStatement stmt = conn.prepareStatement(query)) {
@@ -33,7 +33,7 @@ public class MarketDataReplayer {
                         event.setSymbol(rs.getString("symbol"));
                         event.setLtp(rs.getDouble("ltp"));
                         event.setLtq(rs.getLong("ltq"));
-                        event.setTs(rs.getTimestamp("ts").getTime());
+                        event.setTs(rs.getTimestamp("timestamp").getTime());
                         // ... set other fields from the result set
                     } finally {
                         ringBuffer.publish(sequence);
