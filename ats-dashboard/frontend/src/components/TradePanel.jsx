@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { createChart } from 'lightweight-charts';
+import { createChart, ColorType } from 'lightweight-charts';
 
 const TradePanel = ({ data }) => {
   const chartContainerRef = useRef();
@@ -9,9 +9,9 @@ const TradePanel = ({ data }) => {
   // Chart setup
   useEffect(() => {
     if (chartContainerRef.current) {
-      chartRef.current = createChart(chartContainerRef.current, {
+      const chart = createChart(chartContainerRef.current, {
         layout: {
-          background: { color: 'transparent' },
+          background: { type: ColorType.Solid, color: '#1C212E' },
           textColor: '#8B949E',
         },
         grid: {
@@ -30,7 +30,7 @@ const TradePanel = ({ data }) => {
         },
       });
 
-      seriesRef.current = chartRef.current.addCandlestickSeries({
+      const series = chart.addCandlestickSeries({
         upColor: '#26A69A',
         downColor: '#EF5350',
         borderDownColor: '#EF5350',
@@ -39,10 +39,13 @@ const TradePanel = ({ data }) => {
         wickUpColor: '#26A69A',
       });
 
-      chartRef.current.timeScale().fitContent();
+      chart.timeScale().fitContent();
+
+      chartRef.current = chart;
+      seriesRef.current = series;
 
       return () => {
-        chartRef.current.remove();
+        chart.remove();
       };
     }
   }, []);
