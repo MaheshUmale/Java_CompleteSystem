@@ -2,16 +2,13 @@ package com.trading.hf.dashboard;
 
 import io.javalin.Javalin;
 import io.javalin.websocket.WsContext;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.Set;
 import java.util.Collections;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class DashboardService {
     private Javalin app;
     private final Set<WsContext> sessions = Collections.newSetFromMap(new ConcurrentHashMap<>());
-    private final AtomicReference<String> lastMessage = new AtomicReference<>();
 
     public void start() {
         app = Javalin.create(config -> {
@@ -22,36 +19,18 @@ public class DashboardService {
         app.ws("/data", ws -> {
             ws.onConnect(ctx -> {
                 sessions.add(ctx);
-                System.out.println("Dashboard client connected.");
-                // Use a CompletableFuture to send the initial message shortly after connection,
-                // avoiding a race condition where the message is sent before the handshake is fully complete.
-                CompletableFuture.runAsync(() -> {
-                    try {
-                        // A small delay to ensure the client-side is ready
-                        Thread.sleep(100);
-                        if (ctx.session.isOpen() && lastMessage.get() != null) {
-                            ctx.send(lastMessage.get());
-                        }
-                    } catch (Exception e) {
-                        // This can happen if the client disconnects before the message is sent, which is safe to ignore.
-                        System.err.println("Could not send initial message to client: " + e.getMessage());
-                    }
-                });
+                System.out.println("--- MINIMAL TEST --- Client connected successfully.");
             });
             ws.onClose(ctx -> {
                 sessions.remove(ctx);
-                System.out.println("Dashboard client disconnected.");
+                System.out.println("--- MINIMAL TEST --- Client disconnected.");
             });
             ws.onError(ctx -> {
-                // A ClosedChannelException is expected if the client disconnects abruptly.
-                // We don't need to log it as an error.
-                if (!(ctx.error() instanceof java.nio.channels.ClosedChannelException)) {
-                    System.err.println("Dashboard client error: " + ctx.error());
-                }
                 sessions.remove(ctx);
+                System.err.println("--- MINIMAL TEST --- Client error: " + ctx.error());
             });
         });
-        System.out.println("Dashboard service started on port 7070.");
+        System.out.println("--- MINIMAL TEST --- Dashboard service started on port 7070.");
     }
 
     public void stop() {
@@ -61,15 +40,12 @@ public class DashboardService {
     }
 
     public void broadcast(String message) {
-        lastMessage.set(message); // Cache the latest message
         sessions.forEach(session -> {
             if (session.session.isOpen()) {
                 try {
                     session.send(message);
                 } catch (Exception e) {
-                    System.err.println("Failed to send message to client, removing session: " + e.getMessage());
-                    // Optionally remove the session here if an error occurs
-                    // sessions.remove(session);
+                    System.err.println("--- MINIMAL TEST --- Failed to send message: " + e.getMessage());
                 }
             }
         });
