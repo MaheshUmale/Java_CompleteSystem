@@ -112,10 +112,18 @@ graph TD
     *   In **Live Mode**, the `UpstoxMarketDataStreamer` connects to the Upstox WebSocket API. It receives raw, Protobuf-encoded market data.
     *   In **Simulation Mode**, the `MarketDataReplayer` (specifically `MySampleDataReplayer`) reads compressed JSON data from the `/resources/data` directory.
 
-2.  **Initial Processing & Raw Persistence**:
-    *   The incoming data (live or simulated) is immediately published onto a dedicated LMAX Disruptor ring buffer as a `RawFeedEvent`.
-    *   One handler, `RawFeedWriter`, consumes these raw events and writes them directly to a QuestDB table (`ticks_raw`). This ensures a complete, unaltered record of the raw feed for future replay or deep analysis.
-    *   A second handler decodes the raw Protobuf/JSON data into a standardized `MarketEvent` object. This `MarketEvent` is then published to the main processing Disruptor.
+2.  **Data Parsing and Event Publication**:
+    *   This step is handled differently depending on the run mode, with the end goal of publishing a standardized `MarketEvent` to the main processing disruptor.
+    *   **Live Mode (`UpstoxMarketDataStreamer`)**:
+        *   The application receives a raw `ByteBuffer` from the WebSocket.
+        *   This binary data is parsed using the official Upstox Protobuf definition (`MarketDataFeedV3.FeedResponse.parseFrom(data)`), which deserializes it into a structured Java object.
+        *   The streamer then manually extracts the relevant fields (LTP, LTQ, OI, etc.) from the deeply nested Protobuf object and uses them to populate a `MarketEvent`.
+        *   If persistence is enabled, a `RawFeedEvent` is also populated and published to the raw feed disruptor.
+    *   **Simulation Mode (`MySampleDataReplayer`)**:
+        *   The application reads a `.json.gz` file and uses the Gson library to parse it into a generic `List<Map<String, Object>>`.
+        *   For each record in the list, it manually traverses the map, retrieving values by their string keys (e.g., `ltpc.get("ltp")`).
+        *   It performs explicit type casts (e.g., `((Number) value).doubleValue()`) to convert the generic objects from the JSON into the strongly-typed fields required by the `MarketEvent`.
+    *   In both modes, the fully populated `MarketEvent` is published to the `MarketEvent` ring buffer for the next stage of processing.
 
 3.  **Core Logic Processing (Parallel Handlers)**:
     *   The `MarketEvent` is consumed in parallel by several independent handlers:
@@ -300,31 +308,37 @@ This is the root package for all core application logic.
 
 *   **Purpose**: This `EventHandler` is responsible for processing `MarketEvent`s related to options contracts. It maintains the current state of the option chain and performs calculations to derive meaningful data, such as Open Interest (OI) change, for a relevant window of strike prices around the current spot price.
 *   **Logic**:
-    *   It listens to all `MarketEvent`s.
-    *   If the event is for the Nifty 50 index, it updates its internal `spotPrice` variable.
-    *   If the event is for an options contract (identified by "CE" or "PE" in the symbol), it stores the entire `MarketEvent` object in a map, overwriting any previous state for that contract.
+    *   It listens to all `MarketEvent`s and acts as a filter.
+    *   If the event is for the Nifty 50 index, it updates its internal `spotPrice` variable, which is critical for determining the ATM strike.
+    *   If the event is for an options contract, identified by checking if the instrument symbol string contains the substring `" CE"` or `" PE"`, it stores the entire `MarketEvent` object in a map. This map holds the latest known state for every subscribed option contract.
     *   The `getOptionChainWindow()` method is called by the `DashboardBridge` to retrieve the data for the UI.
 *   **Calculations**:
-    *   **At-the-Money (ATM) Strike**: The most critical calculation, which determines the center of the option chain window.
+    *   **At-the-Money (ATM) Strike**: This is the central calculation, determining the focal point of the option chain.
         *   **Formula**: `round(spot_price / strike_difference) * strike_difference`
         *   **Example**: If the spot price is 22435 and the strike difference is 50, the calculation is `round(22435 / 50) * 50` = `round(448.7) * 50` = `449 * 50` = `22450`. The ATM strike is 22450.
-    *   **Strike Window**: It calculates a `lowerBound` and `upperBound` based on the ATM strike and a configured `WINDOW_SIZE`. For example, a window size of 2 would include ATM, ATM+/-1, and ATM+/-2 strikes.
-    *   **Open Interest (OI) Percentage Change**: This measures the percentage increase or decrease in open interest since the last update for a given contract.
+    *   **Strike Window**: It calculates a `lowerBound` and `upperBound` based on the ATM strike and a configured `WINDOW_SIZE` to select a relevant subset of all options.
+    *   **Open Interest (OI) Percentage Change**: This is a key sentiment indicator, showing where new market participation is flowing.
         *   **Formula**: `((current_oi - previous_oi) / previous_oi) * 100`
-        *   **Logic**: The provider maintains an internal map (`previousOi`) to store the OI from the *last time `getOptionChainWindow` was called*. When a new event arrives, the new OI is used for the calculation, and then the `previousOi` map is updated for the next cycle. This provides a rolling calculation of OI change.
+        *   **Logic**: The provider maintains an internal map (`previousOi`) to store the OI from the *last time `getOptionChainWindow` was called for that specific contract*. When a new event arrives, the new OI is used for the calculation, and then the `previousOi` map is updated for the next cycle.
+        *   **Significance**: A significant positive OI change on a Call (CE) option, especially if it's breaking out, suggests strong bullish conviction. Conversely, a large OI increase on a Put (PE) option indicates strong bearish sentiment. It shows that new positions are being initiated, not just that existing positions are being traded.
 
 #### Class: `DynamicStrikeSubscriber`
 
-*   **Purpose**: This class is a crucial component for managing data efficiency in live mode. Its sole responsibility is to ensure that the application is only subscribed to the market data for the most relevant options contracts. It dynamically adjusts the subscription list as the underlying spot price moves throughout the day.
+*   **Purpose**: This class is a crucial component for managing data efficiency in live mode. Its sole responsibility is to ensure that the application is only subscribed to the market data for the most relevant options contracts. It dynamically adjusts the subscription list as the underlying spot price moves, preventing the system from being overloaded with data for deep out-of-the-money or in-the-money options.
 *   **Logic**:
     *   The `onNiftySpotPrice(double spotPrice)` method is called by the `UpstoxMarketDataStreamer` every time a new tick for the Nifty 50 index is received.
-    *   It first checks if the current date has changed, and if so, it queries the `InstrumentMaster` to find the nearest valid expiry date. This handles weekly and monthly expiry rollovers.
-    *   It then calculates the new ATM strike based on the latest spot price.
-    *   If this newly calculated ATM strike is different from the previously stored one, it triggers the `updateSubscriptions()` method.
-    *   `updateSubscriptions()` generates a new `Set` of instrument keys for a window of strikes (e.g., ATM +/- 4 strikes) for both Calls (CE) and Puts (PE).
-    *   Finally, it passes this new set of required instrument keys to a `Consumer` (which is the `UpstoxMarketDataStreamer`), which is responsible for sending the actual subscribe/unsubscribe requests to the WebSocket API.
+    *   It first checks if the current date has changed to handle expiry rollovers.
+    *   It then calculates the new ATM strike based on the latest spot price. If this is different from the last known ATM, it triggers the subscription update.
+    *   `updateSubscriptions()` generates a new `Set` of desired instrument keys.
+    *   Finally, this `Set` is passed to a `Consumer` (the `UpstoxMarketDataStreamer`), which handles the low-level logic of subscribing to new keys and unsubscribing from old ones.
+*   **PE/CE Logic**:
+    *   The core of the `updateSubscriptions` method is a loop that iterates through the desired strike window (e.g., ATM +/- 4 strikes).
+    *   For each strike price in the window, it makes **two** separate calls to `instrumentMaster.findInstrumentKey()`:
+        1.  One call with `optionType = "CE"` to find the Call option at that strike.
+        2.  One call with `optionType = "PE"` to find the Put option at that strike.
+    *   This ensures that the application always subscribes to the complete options chain (both puts and calls) around the current market price.
 *   **Calculations**:
-    *   **At-the-Money (ATM) Strike**: This calculation is identical to the one in `OptionChainProvider`. It rounds the spot price to the nearest 50-point strike interval to determine the current ATM strike.
+    *   **At-the-Money (ATM) Strike**: This calculation is identical to the one in `OptionChainProvider`.
     *   **Subscription Set Generation**: The core logic is to generate a list of all instrument keys that should be actively monitored. It iterates from a negative window size to a positive one (e.g., -4 to +4), calculates the strike price for each step (`ATM + (i * 50)`), and then uses the `InstrumentMaster` to find the corresponding `instrumentKey` for both the Call and the Put at that strike for the current expiry.
 
 #### Class: `SignalEngine`
