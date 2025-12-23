@@ -175,6 +175,15 @@ public class UpstoxMarketDataStreamer {
                 event.setIv(mff.getIv());
                 event.setTbq((long)mff.getTbq());
                 event.setTsq((long)mff.getTsq());
+        } else if (feed.hasFullFeed() && feed.getFullFeed().hasIndexFF()) {
+            MarketDataFeedV3.IndexFullFeed iff = feed.getFullFeed().getIndexFF();
+            if (iff.hasLtpc()) {
+                MarketDataFeedV3.LTPC ltpc = iff.getLtpc();
+                event.setLtp(ltpc.getLtp());
+                event.setLtt(ltpc.getLtt());
+                event.setCp(ltpc.getCp());
+                event.setLtq(0); // Index has no last traded quantity.
+            }
             }
 
             event.setTs(System.currentTimeMillis());
