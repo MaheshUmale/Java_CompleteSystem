@@ -80,7 +80,7 @@ graph TD
         H --> I[(QuestDB)]
     end
 
-    subgraph Core Processing Pipeline (MarketEvent Disruptor)
+    subgraph Core Processing Pipeline [MarketEvent Disruptor]
         G --> J[VolumeBarGenerator]
         G --> K[IndexWeightCalculator]
         G --> L[OptionChainProvider]
@@ -98,8 +98,8 @@ graph TD
 
     subgraph UI & Presentation
         P --> Q[DashboardBridge]
-        Q -- JSON --> R{DashboardService (Javalin WS)}
-        R --> S[Frontend UI (React)]
+        Q -- JSON --> R{DashboardService 'Javalin WS'}
+        R --> S[Frontend UI 'React']
     end
 
     style I fill:#f9f,stroke:#333,stroke-width:2px
