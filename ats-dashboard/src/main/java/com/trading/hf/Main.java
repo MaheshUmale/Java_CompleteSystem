@@ -20,9 +20,9 @@ public class Main {
 
         AuctionProfileCalculator auctionProfileCalculator = new AuctionProfileCalculator();
         SignalEngine signalEngine = new SignalEngine(auctionProfileCalculator);
-        IndexWeightCalculator indexWeightCalculator = new IndexWeightCalculator("IndexWeights.json");
-        OptionChainProvider optionChainProvider = new OptionChainProvider();
         InstrumentMaster instrumentMaster = new InstrumentMaster("instrument-master.json");
+        IndexWeightCalculator indexWeightCalculator = new IndexWeightCalculator("IndexWeights.json", instrumentMaster);
+        OptionChainProvider optionChainProvider = new OptionChainProvider();
 
         VolumeBarGenerator volumeBarGenerator = new VolumeBarGenerator(volumeThreshold, bar -> {
             auctionProfileCalculator.onVolumeBar(bar);
@@ -88,7 +88,7 @@ public class Main {
                     marketDataStreamer.unsubscribe(toUnsubscribe);
                     System.out.println("Unsubscribing from: " + toUnsubscribe);
                 }
-            }, instrumentMaster);
+            }, instrumentMaster, "NSE_INDEX|Nifty 50");
 
             marketDataStreamer.setStrikeSubscriber(strikeSubscriber);
             marketDataStreamer.connect();
