@@ -65,7 +65,7 @@ The application's architecture is designed to decouple data ingestion, processin
 graph TD
     subgraph Data Input
         A[Upstox WebSocket API]
-        B[Sample Data Replayer (.json.gz)]
+        B[Sample Data Replayer .json.gz]
         C[QuestDB Replayer]
     end
 
