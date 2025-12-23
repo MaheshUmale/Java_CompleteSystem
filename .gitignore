@@ -8,4 +8,4 @@ config.properties
 bin/
 .settings
 .classpath
-.project
+.projectNSE.json
